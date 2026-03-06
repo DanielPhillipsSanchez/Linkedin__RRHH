@@ -31,7 +31,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Recruiter can create, name, paste text into, and delete multiple job descriptions from the options page
   4. Recruiter can mark individual skills within a JD as mandatory or nice-to-have and save that weighting
   5. Recruiter can select which saved JD is the active one for the current evaluation session
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — WXT project scaffold, storage schema types, Vitest test infrastructure
+- [ ] 01-02-PLAN.md — Typed storage helpers implementation (TDD: storage.test.ts)
+- [ ] 01-03-PLAN.md — Background service worker VALIDATE_API_KEY handler (TDD: background.test.ts)
+- [ ] 01-04-PLAN.md — Options page HTML + API key section + JD create/delete
+- [ ] 01-05-PLAN.md — Options page skill weighting editor + active JD selector
+- [ ] 01-06-PLAN.md — Safari Xcode project scaffold and build pipeline
+- [ ] 01-07-PLAN.md — Human verification checkpoint: all SET-01 through SET-06 in Chrome
 
 ### Phase 2: Profile Parsing
 **Goal**: The extension reliably extracts structured candidate data from the current LinkedIn profile page and relays it to the background service worker, including detection of SPA navigation to a new profile
@@ -96,7 +105,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/7 | Not started | - |
 | 2. Profile Parsing | 0/TBD | Not started | - |
 | 3. Scoring Pipeline | 0/TBD | Not started | - |
 | 4. Output Layer | 0/TBD | Not started | - |
