@@ -104,20 +104,20 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SET-01 – SET-06 | Phase 1 | Pending |
-| PARSE-01 – PARSE-06 | Phase 2 | Pending |
-| SCORE-01 – SCORE-08 | Phase 3 | Pending |
-| STORE-01 – STORE-03 | Phase 3 | Pending |
-| MSG-01 – MSG-06 | Phase 4 | Pending |
-| CSV-01 – CSV-05 | Phase 4 | Pending |
-| SCHED-01 – SCHED-04 | Phase 5 | Pending |
-| XBROW-01 – XBROW-03 | Phase 6 | Pending |
+| SET-01 – SET-06 | Phase 1: Foundation | Pending |
+| PARSE-01 – PARSE-06 | Phase 2: Profile Parsing | Pending |
+| SCORE-01 – SCORE-08 | Phase 3: Scoring Pipeline | Pending |
+| STORE-01 – STORE-03 | Phase 3: Scoring Pipeline | Pending |
+| MSG-01 – MSG-06 | Phase 4: Output Layer | Pending |
+| CSV-01 – CSV-05 | Phase 4: Output Layer | Pending |
+| SCHED-01 – SCHED-04 | Phase 5: Scheduling and Notifications | Pending |
+| XBROW-01 – XBROW-03 | Phase 6: Safari Packaging and Cross-Browser Verification | Pending |
 
 **Coverage:**
-- v1 requirements: 38 total
-- Mapped to phases: 38
+- v1 requirements: 41 total
+- Mapped to phases: 41
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after initial definition*
+*Last updated: 2026-03-06 after roadmap creation*
