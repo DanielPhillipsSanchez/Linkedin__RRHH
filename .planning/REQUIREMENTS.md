@@ -21,7 +21,7 @@
 - [x] **PARSE-03**: Extension extracts degrees and institutions from the candidate's Education section
 - [x] **PARSE-04**: Extension extracts the candidate's About / Summary text
 - [x] **PARSE-05**: LinkedIn DOM selectors are abstracted behind a configuration layer so they can be updated without changing scoring logic
-- [ ] **PARSE-06**: Extension detects LinkedIn SPA navigation and re-triggers parsing when the recruiter moves to a new profile
+- [x] **PARSE-06**: Extension detects LinkedIn SPA navigation and re-triggers parsing when the recruiter moves to a new profile
 
 ### Scoring
 
