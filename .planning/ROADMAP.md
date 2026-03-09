@@ -51,7 +51,13 @@ Plans:
   2. Navigating from one LinkedIn profile to another within the same tab causes the extension to detect the change and re-extract data for the new profile without a page reload
   3. If extraction fails or fields are missing, the extension surfaces a field-level health report to the recruiter rather than silently proceeding with incomplete data
   4. All LinkedIn DOM selectors are defined in a single abstraction file; no selector strings appear in scoring or messaging logic
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Parser contracts: types.ts, selectors.ts, messages.ts extension, wxt.config.ts permission, parser.test.ts scaffold (RED)
+- [ ] 02-02-PLAN.md — parseProfile implementation (TDD GREEN): skills, experience, education, about, health report
+- [ ] 02-03-PLAN.md — SPA-aware content.ts rewrite + background PROFILE_PARSED handler
+- [ ] 02-04-PLAN.md — Human checkpoint: live selector validation + SPA navigation smoke test
 
 ### Phase 3: Scoring Pipeline
 **Goal**: Parsed profile data flows through the hybrid scoring engine and emerges as a tier classification, match percentage, skill match/gap breakdown, Claude rationale, and a persisted candidate record — the core value loop is complete
@@ -106,7 +112,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/7 | In Progress|  |
-| 2. Profile Parsing | 0/TBD | Not started | - |
+| 2. Profile Parsing | 0/4 | Not started | - |
 | 3. Scoring Pipeline | 0/TBD | Not started | - |
 | 4. Output Layer | 0/TBD | Not started | - |
 | 5. Scheduling and Notifications | 0/TBD | Not started | - |
