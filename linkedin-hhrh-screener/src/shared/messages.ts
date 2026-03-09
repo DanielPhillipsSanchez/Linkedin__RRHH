@@ -1,4 +1,6 @@
-export type MessageType = 'VALIDATE_API_KEY';
+import type { CandidateProfile, ExtractionHealth } from '../parser/types';
+
+export type MessageType = 'VALIDATE_API_KEY' | 'PROFILE_PARSED';
 
 export interface ValidateApiKeyMessage {
   type: 'VALIDATE_API_KEY';
@@ -9,4 +11,11 @@ export interface ValidateApiKeyResult {
   error?: string;
 }
 
-export type ExtensionMessage = ValidateApiKeyMessage;
+export interface ProfileParsedMessage {
+  type: 'PROFILE_PARSED';
+  profile: CandidateProfile;
+  health: ExtractionHealth;
+  tabId?: number;
+}
+
+export type ExtensionMessage = ValidateApiKeyMessage | ProfileParsedMessage;

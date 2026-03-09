@@ -12,6 +12,7 @@ export default defineConfig({
       'activeTab',
       'scripting',
       'downloads',
+      'webNavigation',
     ],
     host_permissions: [
       'https://www.linkedin.com/*',
