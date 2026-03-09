@@ -6,19 +6,46 @@ const profilePattern = new MatchPattern('https://www.linkedin.com/in/*');
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-function runExtraction(): void {
+/** Wait for the profile name (h1) to appear, then extract. Fallback after 5s. */
+function waitForProfileAndExtract(): void {
   if (debounceTimer !== null) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    debounceTimer = null;
+
+  let observer: MutationObserver | null = null;
+  let settled = false;
+
+  function extract(): void {
+    if (settled) return;
+    settled = true;
+    observer?.disconnect();
+    if (debounceTimer !== null) clearTimeout(debounceTimer);
+
     const { profile, health } = parseProfile(document, location.href);
     const msg: ProfileParsedMessage = { type: 'PROFILE_PARSED', profile, health };
-    try {
-      await browser.runtime.sendMessage(msg);
-    } catch (err) {
-      // Background may be restarting — log and continue
+    browser.runtime.sendMessage(msg).catch((err) => {
       console.warn('[HHRH] sendMessage failed (background restarting?):', err);
+    });
+  }
+
+  // If name element already present, extract after short settle delay
+  if (document.querySelector('h1')?.textContent?.trim()) {
+    debounceTimer = setTimeout(extract, 300);
+    return;
+  }
+
+  // Otherwise observe DOM until h1 has text content
+  observer = new MutationObserver(() => {
+    if (document.querySelector('h1')?.textContent?.trim()) {
+      extract();
     }
-  }, 400);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Fallback: extract after 5s regardless
+  debounceTimer = setTimeout(extract, 5000);
+}
+
+function runExtraction(): void {
+  waitForProfileAndExtract();
 }
 
 export default defineContentScript({
