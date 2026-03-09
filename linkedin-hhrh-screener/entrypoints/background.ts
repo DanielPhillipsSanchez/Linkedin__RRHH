@@ -1,3 +1,31 @@
+import { getApiKey } from '../src/storage/storage';
+
+export async function validateStoredApiKey(): Promise<{ valid: boolean; error?: string }> {
+  const apiKey = await getApiKey();
+  if (!apiKey) return { valid: false, error: 'No API key stored' };
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+    });
+
+    if (response.ok) return { valid: true };
+    if (response.status === 401) return { valid: false, error: 'Invalid API key' };
+    return { valid: false, error: `HTTP ${response.status}` };
+  } catch {
+    return { valid: false, error: 'Network error — check your connection' };
+  }
+}
+
 export default defineBackground(() => {
-  console.log('[HHRH] Background service worker initialized');
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === 'VALIDATE_API_KEY') {
+      validateStoredApiKey().then(sendResponse);
+      return true; // CRITICAL: keep channel open for async response
+    }
+  });
 });
