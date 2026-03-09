@@ -152,3 +152,16 @@ describe('deleteJd clears active', () => {
     expect(activeId).toBe('jd-keep-active');
   });
 });
+
+describe('getStorageUsageBytes', () => {
+  it('returns a number', async () => {
+    const bytes = await getStorageUsageBytes();
+    expect(typeof bytes).toBe('number');
+  });
+});
+
+describe('STORAGE_QUOTA_BYTES', () => {
+  it('is 10MB (10 * 1024 * 1024)', () => {
+    expect(STORAGE_QUOTA_BYTES).toBe(10 * 1024 * 1024);
+  });
+});
