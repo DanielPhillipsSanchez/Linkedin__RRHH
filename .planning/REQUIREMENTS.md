@@ -7,12 +7,12 @@
 
 ### Settings
 
-- [ ] **SET-01**: Recruiter can enter and save their Anthropic Claude API key in the extension options page
-- [ ] **SET-02**: API key is stored exclusively in the background service worker context and never exposed to the content script
-- [ ] **SET-03**: Recruiter can create, name, and save multiple job descriptions inside the extension
-- [ ] **SET-04**: Recruiter can paste raw JD text into the extension to import it as a saved JD
-- [ ] **SET-05**: Recruiter can mark individual skills in a JD as mandatory vs. nice-to-have for weighted scoring
-- [ ] **SET-06**: Recruiter can select which saved JD to use for the current evaluation session
+- [x] **SET-01**: Recruiter can enter and save their Anthropic Claude API key in the extension options page
+- [x] **SET-02**: API key is stored exclusively in the background service worker context and never exposed to the content script
+- [x] **SET-03**: Recruiter can create, name, and save multiple job descriptions inside the extension
+- [x] **SET-04**: Recruiter can paste raw JD text into the extension to import it as a saved JD
+- [x] **SET-05**: Recruiter can mark individual skills in a JD as mandatory vs. nice-to-have for weighted scoring
+- [x] **SET-06**: Recruiter can select which saved JD to use for the current evaluation session
 
 ### Profile Parsing
 
