@@ -21,9 +21,13 @@ export async function getApiKey(): Promise<string | undefined> {
 
 // ---- Job Descriptions ----
 
+async function getJdIndex(): Promise<string[]> {
+  const result = await browser.storage.local.get(STORAGE_KEYS.JD_INDEX);
+  return (result[STORAGE_KEYS.JD_INDEX] as string[] | undefined) ?? [];
+}
+
 export async function saveJd(jd: JobDescription): Promise<void> {
-  const indexResult = await browser.storage.local.get(STORAGE_KEYS.JD_INDEX);
-  const ids: string[] = (indexResult[STORAGE_KEYS.JD_INDEX] as string[] | undefined) ?? [];
+  const ids = await getJdIndex();
   if (!ids.includes(jd.id)) {
     ids.push(jd.id);
     await browser.storage.local.set({ [STORAGE_KEYS.JD_INDEX]: ids });
@@ -32,8 +36,7 @@ export async function saveJd(jd: JobDescription): Promise<void> {
 }
 
 export async function getAllJds(): Promise<JobDescription[]> {
-  const indexResult = await browser.storage.local.get(STORAGE_KEYS.JD_INDEX);
-  const ids: string[] = (indexResult[STORAGE_KEYS.JD_INDEX] as string[] | undefined) ?? [];
+  const ids = await getJdIndex();
   if (ids.length === 0) return [];
   const keys = ids.map((id) => STORAGE_KEYS.jd(id));
   const result = await browser.storage.local.get(keys);
@@ -42,8 +45,7 @@ export async function getAllJds(): Promise<JobDescription[]> {
 
 export async function deleteJd(jdId: string): Promise<void> {
   // Remove from index
-  const indexResult = await browser.storage.local.get(STORAGE_KEYS.JD_INDEX);
-  const ids: string[] = (indexResult[STORAGE_KEYS.JD_INDEX] as string[] | undefined) ?? [];
+  const ids = await getJdIndex();
   const updated = ids.filter((id) => id !== jdId);
   await browser.storage.local.set({ [STORAGE_KEYS.JD_INDEX]: updated });
 
