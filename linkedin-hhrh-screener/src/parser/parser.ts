@@ -58,7 +58,7 @@ function computeHealth(
   // skills, experience, and education empty arrays are valid states — not flagged as missing
 
   return {
-    ok: !missing.includes('name') && !missing.includes('headline'),
+    ok: !missing.includes('name'), // headline/about may be empty due to LinkedIn DOM changes
     missing,
   };
 }
