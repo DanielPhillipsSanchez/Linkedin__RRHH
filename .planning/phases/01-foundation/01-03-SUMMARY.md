@@ -95,6 +95,15 @@ None.
 - The background handler is live and tested — options page wires to it without changes needed here
 - Plans 02 and 03 complete Wave 1; Wave 2 (Plan 04) can begin
 
+## Self-Check: PASSED
+
+- [x] `linkedin-hhrh-screener/entrypoints/background.ts` — FOUND
+- [x] `linkedin-hhrh-screener/tests/background.test.ts` — FOUND
+- [x] Commit `2eea1a0` (RED phase) — FOUND
+- [x] Commit `1578a7a` (GREEN phase) — FOUND
+- [x] `.planning/phases/01-foundation/01-03-SUMMARY.md` — FOUND
+- [x] `pnpm vitest run` — 20/20 tests pass (4 background + 16 storage)
+
 ---
 *Phase: 01-foundation*
 *Completed: 2026-03-09*
