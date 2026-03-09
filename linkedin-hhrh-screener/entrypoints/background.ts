@@ -1,4 +1,12 @@
 import { getApiKey } from '../src/storage/storage';
+import type { ProfileParsedMessage } from '../src/shared/messages';
+import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
+
+let lastParsedProfile: { profile: CandidateProfile; health: ExtractionHealth } | null = null;
+
+export function getLastParsedProfile(): { profile: CandidateProfile; health: ExtractionHealth } | null {
+  return lastParsedProfile;
+}
 
 export async function validateStoredApiKey(): Promise<{ valid: boolean; error?: string }> {
   const apiKey = await getApiKey();
@@ -26,6 +34,14 @@ export default defineBackground(() => {
     if (message.type === 'VALIDATE_API_KEY') {
       validateStoredApiKey().then(sendResponse);
       return true; // CRITICAL: keep channel open for async response
+    }
+
+    if (message.type === 'PROFILE_PARSED') {
+      const msg = message as ProfileParsedMessage;
+      lastParsedProfile = { profile: msg.profile, health: msg.health };
+      console.log('[HHRH] Profile parsed:', msg.profile.name, '| Health ok:', msg.health.ok);
+      sendResponse({ received: true });
+      return true;
     }
   });
 });
