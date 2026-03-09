@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-foundation 01-02-PLAN.md — storage helpers TDD
-last_updated: "2026-03-09T18:21:31.486Z"
+stopped_at: Completed 02-profile-parsing 02-01-PLAN.md — parser contracts and RED test scaffold
+last_updated: "2026-03-09T20:25:04.316Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
   percent: 14
 ---
 
@@ -53,6 +53,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 01-foundation P01 | 4 | 2 tasks | 12 files |
 | Phase 01-foundation P03 | 5 | 2 tasks | 2 files |
 | Phase 01-foundation P02 | 12 | 3 tasks | 2 files |
+| Phase 02-profile-parsing P01 | 15 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: getJdIndex() private helper eliminates 3x duplication of JD index read pattern
 - [Phase 01-foundation]: Explicit (result[KEY] as string[] | undefined) cast required for TypeScript strict mode with browser.storage.local.get return type
 - [Phase 01-foundation]: getStorageUsageBytes guards getBytesInUse call — fake-browser does not implement it; returns 0 in test env
+- [Phase 02-profile-parsing]: jsdom installed as devDependency: WxtVitest defaults to happy-dom which lacks DOMParser
+- [Phase 02-profile-parsing]: SELECTORS abstraction layer (PARSE-05): all 14 LinkedIn CSS selector strings live exclusively in src/parser/selectors.ts
+- [Phase 02-profile-parsing]: ExtractionHealth.missing excludes profileUrl: set by caller not extracted from DOM
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T13:36:30.917Z
-Stopped at: Completed 01-foundation 01-02-PLAN.md — storage helpers TDD
+Last session: 2026-03-09T20:25:04.314Z
+Stopped at: Completed 02-profile-parsing 02-01-PLAN.md — parser contracts and RED test scaffold
 Resume file: None
