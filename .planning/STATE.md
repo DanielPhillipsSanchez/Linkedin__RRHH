@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-foundation 01-01-PLAN.md
-last_updated: "2026-03-09T13:32:09.768Z"
+stopped_at: Completed 01-foundation-03-PLAN.md — background VALIDATE_API_KEY handler with 4 passing tests
+last_updated: "2026-03-09T13:36:17.018Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 3
   percent: 14
 ---
 
@@ -51,6 +51,7 @@ Progress: [█░░░░░░░░░] 14%
 
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 4 | 2 tasks | 12 files |
+| Phase 01-foundation P03 | 5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 01-01]: webextension-polyfill not needed: WXT 0.20.18 bundles browser.* polyfill internally
 - [Phase 01-01]: @types/chrome not needed: WXT generates chrome.* types in .wxt/types/ via wxt prepare
 - [Phase 01-01]: vitest@4.0.18 and @webext-core/fake-browser@1.3.4 manually added as devDependencies (not pre-bundled)
+- [Phase 01-foundation]: validateStoredApiKey exported as named function for direct unit testability without browser runtime
+- [Phase 01-foundation]: fetch mocked via vi.stubGlobal in Vitest — no msw needed for background service worker tests
+- [Phase 01-foundation]: API key never in message payload — background returns {valid, error?} only (SET-02 compliance)
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T13:32:09.765Z
-Stopped at: Completed 01-foundation 01-01-PLAN.md
+Last session: 2026-03-09T13:35:49.893Z
+Stopped at: Completed 01-foundation-03-PLAN.md — background VALIDATE_API_KEY handler with 4 passing tests
 Resume file: None
