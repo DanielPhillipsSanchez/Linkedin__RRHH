@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-profile-parsing 02-01-PLAN.md — parser contracts and RED test scaffold
-last_updated: "2026-03-09T20:25:04.316Z"
+stopped_at: Completed 02-profile-parsing 02-02-PLAN.md — parseProfile implementation GREEN
+last_updated: "2026-03-09T20:28:20.622Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
   percent: 14
 ---
 
@@ -54,6 +54,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 01-foundation P03 | 5 | 2 tasks | 2 files |
 | Phase 01-foundation P02 | 12 | 3 tasks | 2 files |
 | Phase 02-profile-parsing P01 | 15 | 3 tasks | 7 files |
+| Phase 02-profile-parsing P02 | 125 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-profile-parsing]: jsdom installed as devDependency: WxtVitest defaults to happy-dom which lacks DOMParser
 - [Phase 02-profile-parsing]: SELECTORS abstraction layer (PARSE-05): all 14 LinkedIn CSS selector strings live exclusively in src/parser/selectors.ts
 - [Phase 02-profile-parsing]: ExtractionHealth.missing excludes profileUrl: set by caller not extracted from DOM
+- [Phase 02-profile-parsing]: health.ok depends only on name AND headline — name is critical signal; headline confirms real profile page (not error page)
+- [Phase 02-profile-parsing]: skills/experience/education empty arrays not flagged as missing — sections may not be scrolled; absence is valid state
+- [Phase 02-profile-parsing]: profileUrl defaults to empty string — content script passes window.location.href; default enables pure testability
 
 ### Pending Todos
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:25:04.314Z
-Stopped at: Completed 02-profile-parsing 02-01-PLAN.md — parser contracts and RED test scaffold
+Last session: 2026-03-09T20:28:20.620Z
+Stopped at: Completed 02-profile-parsing 02-02-PLAN.md — parseProfile implementation GREEN
 Resume file: None
