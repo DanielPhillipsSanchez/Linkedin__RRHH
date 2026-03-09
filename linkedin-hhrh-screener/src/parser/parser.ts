@@ -74,11 +74,21 @@ function computeHealth(
  * @param profileUrl - The URL of the profile page (default '' for tests)
  * @returns { profile, health }
  */
+/** Extract candidate name from page title ("Yann LeCun | LinkedIn" → "Yann LeCun") */
+function parseNameFromTitle(doc: Document): string {
+  const title = doc.title ?? '';
+  const parts = title.split('|');
+  const candidate = parts[0].trim();
+  // Reject generic LinkedIn page titles
+  if (!candidate || candidate.toLowerCase().includes('linkedin')) return '';
+  return candidate;
+}
+
 export function parseProfile(
   doc: Document,
   profileUrl: string = '',
 ): { profile: CandidateProfile; health: ExtractionHealth } {
-  const name = doc.querySelector(SELECTORS.name)?.textContent?.trim() ?? '';
+  const name = parseNameFromTitle(doc);
   const headline = doc.querySelector(SELECTORS.headline)?.textContent?.trim() ?? '';
   const about = doc.querySelector(SELECTORS.about)?.textContent?.trim() ?? '';
   const skills = extractSkills(doc);

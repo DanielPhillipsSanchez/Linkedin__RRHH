@@ -4,7 +4,7 @@
  * PARSE-05 compliance: all selector changes happen here only.
  */
 export const SELECTORS = {
-  name: 'h1',
+  name: 'title', // extracted from document.title via parseNameFromTitle()
   headline: 'div.text-body-medium.break-words',
   about: 'section[data-view-name="profile-card"] div.inline-show-more-text span[aria-hidden="true"]',
   skillItem: 'a[data-field="skill_card_skill_topic"] span[aria-hidden="true"]',

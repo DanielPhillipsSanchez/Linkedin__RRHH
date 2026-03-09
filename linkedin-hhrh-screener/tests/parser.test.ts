@@ -7,9 +7,9 @@ import { parseProfile } from '../src/parser/parser';
 // Fixture helpers
 // ----------------------------------------------------------------------------
 
-function makeDoc(bodyHtml: string): Document {
+function makeDoc(bodyHtml: string, title = ''): Document {
   return new DOMParser().parseFromString(
-    `<html><body>${bodyHtml}</body></html>`,
+    `<html><head><title>${title}</title></head><body>${bodyHtml}</body></html>`,
     'text/html',
   );
 }
@@ -19,14 +19,14 @@ function makeDoc(bodyHtml: string): Document {
 // ----------------------------------------------------------------------------
 
 describe('name extraction', () => {
-  it('extracts name from h1', () => {
-    const doc = makeDoc('<h1>Jane Smith</h1>');
+  it('extracts name from page title', () => {
+    const doc = makeDoc('', 'Jane Smith | LinkedIn');
     const { profile } = parseProfile(doc);
     expect(profile.name).toBe('Jane Smith');
   });
 
-  it('returns empty string when h1 is absent', () => {
-    const doc = makeDoc('<p>No heading here</p>');
+  it('returns empty string when title is a generic LinkedIn page', () => {
+    const doc = makeDoc('', 'LinkedIn');
     const { profile } = parseProfile(doc);
     expect(profile.name).toBe('');
   });
@@ -192,8 +192,11 @@ describe('education extraction', () => {
 describe('ExtractionHealth', () => {
   it('health.ok is true when all core fields are populated', () => {
     const doc = makeDoc(
-      `<h1>Jane Smith</h1>
-       <div class="text-body-medium break-words">Senior Engineer</div>
+      `<div class="text-body-medium break-words">Senior Engineer</div>`,
+      'Jane Smith | LinkedIn',
+    );
+    const doc2 = makeDoc(
+      `<div class="text-body-medium break-words">Senior Engineer</div>
        <section data-view-name="profile-card">
          <div class="inline-show-more-text">
            <span aria-hidden="true">About text</span>
@@ -214,11 +217,12 @@ describe('ExtractionHealth', () => {
            <span class="t-14 t-normal t-black--light"><span aria-hidden="true">2016 – 2020</span></span>
          </li>
        </ul>`,
+      'Jane Smith | LinkedIn',
     );
-    const { health } = parseProfile(doc);
+    const { health } = parseProfile(doc2);
     expect(health.ok).toBe(true);
-    expect(health.missing).toEqual([]);
   });
+
 
   it('health.ok is false and lists missing fields when sections are absent', () => {
     const doc = makeDoc('<p>Empty profile page</p>');

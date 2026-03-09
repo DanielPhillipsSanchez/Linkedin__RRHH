@@ -26,15 +26,17 @@ function waitForProfileAndExtract(): void {
     });
   }
 
-  // If name element already present, extract after short settle delay
-  if (document.querySelector('h1')?.textContent?.trim()) {
+  // If page title already has the candidate name, extract after short settle delay
+  const titleName = document.title.split('|')[0].trim();
+  if (titleName && !titleName.toLowerCase().includes('linkedin')) {
     debounceTimer = setTimeout(extract, 300);
     return;
   }
 
-  // Otherwise observe DOM until h1 has text content
+  // Otherwise observe DOM until page title updates with the profile name
   observer = new MutationObserver(() => {
-    if (document.querySelector('h1')?.textContent?.trim()) {
+    const name = document.title.split('|')[0].trim();
+    if (name && !name.toLowerCase().includes('linkedin')) {
       extract();
     }
   });
