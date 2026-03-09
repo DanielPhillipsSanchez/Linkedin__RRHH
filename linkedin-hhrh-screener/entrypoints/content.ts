@@ -6,10 +6,14 @@ const profilePattern = new MatchPattern('https://www.linkedin.com/in/*');
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** Wait for the profile name (h1) to appear, then extract. Fallback after 5s. */
-function waitForProfileAndExtract(): void {
+/**
+ * Wait for the page title to change (SPA nav) or settle (initial load), then extract.
+ * @param waitForTitleChange - true on SPA navigation (title still shows previous page)
+ */
+function waitForProfileAndExtract(waitForTitleChange = false): void {
   if (debounceTimer !== null) clearTimeout(debounceTimer);
 
+  const capturedTitle = document.title; // snapshot before navigation
   let observer: MutationObserver | null = null;
   let settled = false;
 
@@ -17,8 +21,8 @@ function waitForProfileAndExtract(): void {
     if (settled) return;
     settled = true;
     observer?.disconnect();
-    if (debounceTimer !== null) clearTimeout(debounceTimer);
-
+    observer = null;
+    if (debounceTimer !== null) { clearTimeout(debounceTimer); debounceTimer = null; }
     const { profile, health } = parseProfile(document, location.href);
     const msg: ProfileParsedMessage = { type: 'PROFILE_PARSED', profile, health };
     browser.runtime.sendMessage(msg).catch((err) => {
@@ -26,42 +30,46 @@ function waitForProfileAndExtract(): void {
     });
   }
 
-  // If page title already has the candidate name, extract after short settle delay
-  const titleName = document.title.split('|')[0].trim();
-  if (titleName && !titleName.toLowerCase().includes('linkedin')) {
-    debounceTimer = setTimeout(extract, 300);
+  if (!waitForTitleChange) {
+    // Initial load: title already reflects this profile — extract after short settle
+    debounceTimer = setTimeout(extract, 500);
     return;
   }
 
-  // Otherwise observe DOM until page title updates with the profile name
+  // SPA navigation: wait for title to change from the captured snapshot, then extract
   observer = new MutationObserver(() => {
-    const name = document.title.split('|')[0].trim();
-    if (name && !name.toLowerCase().includes('linkedin')) {
-      extract();
+    if (document.title !== capturedTitle) {
+      const name = document.title.split('|')[0].trim();
+      if (name && !name.toLowerCase().includes('linkedin')) {
+        observer?.disconnect();
+        observer = null;
+        debounceTimer = setTimeout(extract, 300); // extra settle for body render
+      }
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  // Observe <html> so we catch <title> changes in <head>
+  observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
 
   // Fallback: extract after 5s regardless
   debounceTimer = setTimeout(extract, 5000);
 }
 
-function runExtraction(): void {
-  waitForProfileAndExtract();
+function runExtraction(waitForTitleChange = false): void {
+  waitForProfileAndExtract(waitForTitleChange);
 }
 
 export default defineContentScript({
   matches: ['https://www.linkedin.com/*'], // broad — survives SPA navigation
   main(ctx) {
-    // Initial load: run immediately if we are on a profile page
+    // Initial load: title already reflects this profile
     if (profilePattern.includes(location.href)) {
-      runExtraction();
+      runExtraction(false);
     }
 
-    // SPA navigation: wxt:locationchange fires on every pushState/replaceState
+    // SPA navigation: title still shows previous page — wait for it to change
     ctx.addEventListener(window, 'wxt:locationchange', ({ newUrl }: { newUrl: string }) => {
       if (profilePattern.includes(newUrl)) {
-        runExtraction();
+        runExtraction(true);
       }
     });
   },
