@@ -1,4 +1,4 @@
 document.getElementById('settings-link')?.addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.runtime.openOptionsPage();
+  browser.runtime.openOptionsPage();
 });
