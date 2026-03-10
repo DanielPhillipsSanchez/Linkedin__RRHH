@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-scoring-pipeline 03-05-PLAN.md — EVALUATE handler wiring
-last_updated: "2026-03-10T13:29:54.250Z"
+stopped_at: "Checkpoint: 03-06 awaiting human verification — Evaluate popup built, end-to-end test pending"
+last_updated: "2026-03-10T13:33:11.868Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 17
-  completed_plans: 16
+  completed_plans: 17
   percent: 14
 ---
 
@@ -61,6 +61,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 03-scoring-pipeline P02 | 8 | 2 tasks | 2 files |
 | Phase 03-scoring-pipeline P03 | 8 | 1 tasks | 1 files |
 | Phase 03-scoring-pipeline P05 | 10 | 2 tasks | 3 files |
+| Phase 03-scoring-pipeline P06 | 2 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,8 @@ Recent decisions affecting current work:
 - [Phase 03-scoring-pipeline]: JSON.parse failure in refineWithClaude returns graceful fallback instead of throwing — scoring degrades gracefully on unexpected Claude output
 - [Phase 03-scoring-pipeline]: handleEvaluate exported as named function for direct unit testability — same pattern as validateStoredApiKey
 - [Phase 03-scoring-pipeline]: _setLastParsedProfileForTest exported: fakeBrowser.sendMessage requires registered listeners; direct setter avoids message round-trip in tests
+- [Phase 03-06]: Popup uses index.ts entrypoint (not main.ts): WXT scaffold created index.html→index.ts as real popup; main.ts is unused scaffold
+- [Phase 03-06]: result-section starts hidden via HTML hidden attribute: prevents empty result panel flash on popup open
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:29:54.248Z
-Stopped at: Completed 03-scoring-pipeline 03-05-PLAN.md — EVALUATE handler wiring
+Last session: 2026-03-10T13:33:07.929Z
+Stopped at: Checkpoint: 03-06 awaiting human verification — Evaluate popup built, end-to-end test pending
 Resume file: None

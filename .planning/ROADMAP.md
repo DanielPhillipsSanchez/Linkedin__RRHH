@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Extension scaffold, storage schema, API key settings, JD management, and Safari Xcode setup
 - [ ] **Phase 2: Profile Parsing** - LinkedIn DOM extraction, SPA navigation detection, and selector abstraction layer
-- [ ] **Phase 3: Scoring Pipeline** - Hybrid keyword + Claude scoring, tier assignment, candidate storage, and score display
+- [x] **Phase 3: Scoring Pipeline** - Hybrid keyword + Claude scoring, tier assignment, candidate storage, and score display (completed 2026-03-10)
 - [ ] **Phase 4: Output Layer** - Popup UI, message generation and review, candidate history view, and CSV export
 - [ ] **Phase 5: Scheduling and Notifications** - Layer 3 alarms, browser notifications, badge counter, and overdue contact list
 - [ ] **Phase 6: Safari Packaging and Cross-Browser Verification** - Signed Safari build, feature parity verification, and submission prep
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/7 | In Progress|  |
 | 2. Profile Parsing | 3/4 | In Progress|  |
-| 3. Scoring Pipeline | 4/6 | In Progress|  |
+| 3. Scoring Pipeline | 6/6 | Complete   | 2026-03-10 |
 | 4. Output Layer | 0/TBD | Not started | - |
 | 5. Scheduling and Notifications | 0/TBD | Not started | - |
 | 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
