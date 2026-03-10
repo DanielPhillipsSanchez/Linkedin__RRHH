@@ -47,15 +47,15 @@
 - [ ] **MSG-03**: Extension generates a tailored outreach message for Layer 3 candidates using a future-opportunity-tone template, noting the delayed contact intent
 - [ ] **MSG-04**: Recruiter can edit the generated message in the extension panel before sending
 - [ ] **MSG-05**: Extension provides a button that opens LinkedIn's native message compose window with the candidate pre-filled
-- [ ] **MSG-06**: Sent message text and timestamp are saved to the candidate's local record (message history)
+- [x] **MSG-06**: Sent message text and timestamp are saved to the candidate's local record (message history)
 
 ### CSV Export
 
 - [ ] **CSV-01**: Recruiter can export all evaluated candidates to a CSV file
-- [ ] **CSV-02**: CSV includes: candidate name, title, LinkedIn URL, tier, match score
-- [ ] **CSV-03**: CSV includes: matched skills and missing skills (comma-separated) per candidate
-- [ ] **CSV-04**: CSV includes: evaluation date and "Contact After" date for Layer 3 candidates (evaluation date + 7 days)
-- [ ] **CSV-05**: CSV includes: outreach message text that was sent
+- [x] **CSV-02**: CSV includes: candidate name, title, LinkedIn URL, tier, match score
+- [x] **CSV-03**: CSV includes: matched skills and missing skills (comma-separated) per candidate
+- [x] **CSV-04**: CSV includes: evaluation date and "Contact After" date for Layer 3 candidates (evaluation date + 7 days)
+- [x] **CSV-05**: CSV includes: outreach message text that was sent
 
 ### Layer 3 Scheduling
 
