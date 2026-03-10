@@ -76,6 +76,11 @@ function showResult(result: EvaluateResult): void {
     return;
   }
 
+  // Non-fatal warning (e.g. Claude API key invalid — score is keyword-only)
+  if (result.warning) {
+    errorEl.textContent = `Warning: ${result.warning}`;
+  }
+
   tierEl.textContent = result.tierLabel;
   tierEl.dataset.tier = result.tier;
 

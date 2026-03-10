@@ -118,10 +118,18 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   // Claude refinement (skip if nothing unmatched)
   let additionalMatches: string[] = [];
   let rationale = '';
+  let claudeWarning: string | undefined;
   if (unmatchedSkills.length > 0) {
     const refined = await refineWithClaude(apiKey, profile, unmatchedSkills);
     additionalMatches = refined.additionalMatches;
     rationale = refined.rationale;
+    if (refined.claudeError === '401') {
+      claudeWarning = 'Claude API key invalid — please update it in Options. Score shown is keyword-only.';
+    } else if (refined.claudeError === 'network') {
+      claudeWarning = 'Claude API unreachable — score is keyword-only.';
+    } else if (refined.claudeError) {
+      claudeWarning = `Claude API error ${refined.claudeError} — score is keyword-only.`;
+    }
   }
 
   // Final matched set
@@ -164,6 +172,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     missingSkills,
     rationale,
     candidateId: record.id,
+    ...(claudeWarning ? { warning: claudeWarning } : {}),
   };
 }
 

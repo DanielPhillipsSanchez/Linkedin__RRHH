@@ -32,6 +32,8 @@ export interface EvaluateResult {
   rationale: string;
   candidateId: string;
   error?: string;
+  /** Non-fatal warning (e.g. Claude API error — score is keyword-only) */
+  warning?: string;
 }
 
 export type ExtensionMessage = ValidateApiKeyMessage | ProfileParsedMessage | EvaluateMessage;

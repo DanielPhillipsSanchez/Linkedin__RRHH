@@ -43,36 +43,51 @@ function buildPrompt(profile: CandidateProfile, unmatchedSkills: Skill[]): strin
 /**
  * Calls the Claude Haiku API to resolve ambiguous skill synonyms.
  * Skips the API call entirely when unmatchedSkills is empty.
- * Returns graceful fallback on JSON parse failure; re-throws on network errors.
+ * Returns graceful fallback on JSON parse failure or API errors — never throws.
+ * On 401: returns { additionalMatches: [], rationale: 'Claude API key invalid...', claudeError: '401' }
  */
 export async function refineWithClaude(
   apiKey: string,
   profile: CandidateProfile,
   unmatchedSkills: Skill[],
-): Promise<{ additionalMatches: string[]; rationale: string }> {
+): Promise<{ additionalMatches: string[]; rationale: string; claudeError?: string }> {
   if (unmatchedSkills.length === 0) {
     return { additionalMatches: [], rationale: '' };
   }
 
   const prompt = buildPrompt(profile, unmatchedSkills);
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    signal: AbortSignal.timeout(25_000),
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: AbortSignal.timeout(25_000),
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+  } catch {
+    // Network error or timeout — degrade gracefully
+    return { additionalMatches: [], rationale: '', claudeError: 'network' };
+  }
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`);
+    if (response.status === 401) {
+      return {
+        additionalMatches: [],
+        rationale: '',
+        claudeError: '401',
+      };
+    }
+    // Other API errors (400, 404, 429, 500) — degrade gracefully
+    return { additionalMatches: [], rationale: '', claudeError: String(response.status) };
   }
 
   const data = await response.json() as { content: Array<{ type: string; text: string }> };
