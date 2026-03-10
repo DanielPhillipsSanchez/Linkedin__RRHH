@@ -31,8 +31,8 @@ Estructura del mensaje:
 PARTE 1 — Intro (máximo 2 líneas):
 Saludo breve y personal usando "tu". Una frase que rompa el hielo de forma natural, como si fuera un mensaje entre conocidos. No uses "espero que estés bien" ni frases de plantilla.
 
-PARTE 2 — Por qué te escribo (3 a 4 líneas):
-Explica qué cargo estamos buscando, menciona algo concreto de su experiencia o habilidades que llamó la atención, y por qué encaja. Usa "tú" y primera persona (yo, estoy, vi). Natural, sin exagerar.
+PARTE 2 — Por qué te escribo (1 a 2 líneas):
+En una o dos frases, di qué cargo buscamos y qué de su perfil o experiencia te llamó la atención. Directo, sin rodeos, sin palabras rimbombantes.
 
 PARTE 3 — Cierre (1 línea):
 Pídele su número de celular y que te diga el día y la hora que más le quede bien para una llamada corta.
@@ -42,6 +42,7 @@ Reglas:
 - Sin anglicismos, sin palabras de España (vale, guay, móvil, currículum)
 - Sin signos de exclamación ni puntos suspensivos
 - Sin comillas, corchetes ni marcadores de posición
+- Sin palabras que suenen a robot o a texto generado: honestamente, realmente, sin duda, me complace, me alegra, quisiera, considero, en tal sentido
 - Solo el texto del mensaje, sin asunto ni firma`;
 }
 
