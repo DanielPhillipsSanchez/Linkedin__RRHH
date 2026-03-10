@@ -89,7 +89,12 @@ Plans:
   3. Clicking the send action opens LinkedIn's native message compose window with the candidate pre-filled; no message is sent automatically
   4. The sent message text and timestamp are saved to the candidate's local record
   5. Recruiter can export all evaluated candidates to a CSV file containing name, title, URL, tier, score, matched skills, missing skills, evaluation date, contact-after date (Layer 3 only), and sent message text
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Wave 1: Add handleGenerateMessage + handleSaveMessage tests to background.test.ts; create tests/csv.test.ts (CSV-02 through CSV-05)
+- [ ] 04-02-PLAN.md — Wave 2: Run full suite, audit and fix any gaps in messenger.ts, popup wiring, and csv.ts
+- [ ] 04-03-PLAN.md — Wave 3: Build extension + human end-to-end verification checkpoint (full recruiter workflow)
 
 ### Phase 5: Scheduling and Notifications
 **Goal**: Layer 3 candidates are automatically scheduled for a 7-day follow-up reminder via browser alarm; overdue contacts surface in both system notifications and an in-extension list so the recruiter cannot miss them even if notifications are blocked
@@ -122,6 +127,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation | 3/7 | In Progress|  |
 | 2. Profile Parsing | 3/4 | In Progress|  |
 | 3. Scoring Pipeline | 6/6 | Complete   | 2026-03-10 |
-| 4. Output Layer | 0/TBD | Not started | - |
+| 4. Output Layer | 0/3 | Not started | - |
 | 5. Scheduling and Notifications | 0/TBD | Not started | - |
 | 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
