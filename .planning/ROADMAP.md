@@ -107,7 +107,12 @@ Plans:
   2. When the alarm fires, a system browser notification is shown naming the Layer 3 candidate and prompting the recruiter to make contact
   3. The extension icon badge displays the count of Layer 3 candidates whose 7-day window has passed and who have not yet been contacted
   4. The extension popup shows a list of Layer 3 candidates whose contact window is open, so the recruiter can act even if system notifications were denied
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Wave 1 (TDD): SCHED-01/02/03 tests + background.ts alarm creation, fire handler, refreshBadge
+- [ ] 05-02-PLAN.md — Wave 1 (parallel): SCHED-04 popup overdue L3 section (index.html + index.ts)
+- [ ] 05-03-PLAN.md — Wave 2: Build extension + human verification checkpoint (all four SCHED requirements in Chrome)
 
 ### Phase 6: Safari Packaging and Cross-Browser Verification
 **Goal**: The extension runs identically in Safari with a signed Xcode build, all features verified at parity with Chrome, ready for App Store submission if distribution beyond developer mode is required
@@ -130,5 +135,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Profile Parsing | 3/4 | In Progress|  |
 | 3. Scoring Pipeline | 6/6 | Complete   | 2026-03-10 |
 | 4. Output Layer | 5/5 | Complete   | 2026-03-10 |
-| 5. Scheduling and Notifications | 0/TBD | Not started | - |
+| 5. Scheduling and Notifications | 0/3 | Not started | - |
 | 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
