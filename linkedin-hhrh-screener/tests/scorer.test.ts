@@ -65,7 +65,7 @@ describe('computeScore', () => {
 // SCORE-04 — tier assignment
 // ---------------------------------------------------------------------------
 
-describe('assignTier', () => {
+describe('assignTier — standard (≤8 skills)', () => {
   it('score 80 → L1', () => expect(assignTier(80)).toBe('L1'));
   it('score 79 → L2', () => expect(assignTier(79)).toBe('L2'));
   it('score 71 → L2', () => expect(assignTier(71)).toBe('L2'));
@@ -73,6 +73,16 @@ describe('assignTier', () => {
   it('score 60 → L3', () => expect(assignTier(60)).toBe('L3'));
   it('score 59 → rejected', () => expect(assignTier(59)).toBe('rejected'));
   it('score 0 → rejected', () => expect(assignTier(0)).toBe('rejected'));
+});
+
+describe('assignTier — large JD (>8 skills)', () => {
+  it('score 60 → L1', () => expect(assignTier(60, 9)).toBe('L1'));
+  it('score 59 → L2', () => expect(assignTier(59, 9)).toBe('L2'));
+  it('score 54 → L2', () => expect(assignTier(54, 9)).toBe('L2'));
+  it('score 53 → L3', () => expect(assignTier(53, 9)).toBe('L3'));
+  it('score 49 → L3', () => expect(assignTier(49, 9)).toBe('L3'));
+  it('score 48 → rejected', () => expect(assignTier(48, 9)).toBe('rejected'));
+  it('score 0 → rejected', () => expect(assignTier(0, 9)).toBe('rejected'));
 });
 
 // ---------------------------------------------------------------------------

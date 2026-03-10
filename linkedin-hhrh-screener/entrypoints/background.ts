@@ -129,7 +129,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   // Final matched set
   const allMatchedTexts = new Set([...matchedSkills, ...additionalMatches]);
   const score = computeScore(jd.skills, allMatchedTexts);
-  const tier = assignTier(score);
+  const tier = assignTier(score, jd.skills.length);
   const tierLabel = TIER_LABELS[tier];
 
   // Missing skills: mandatory skills not in final matched set
