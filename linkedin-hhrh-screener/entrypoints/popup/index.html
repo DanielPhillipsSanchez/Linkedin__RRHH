@@ -5,9 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LinkedIn HHRH Screener</title>
     <meta name="manifest.type" content="browser_action" />
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <p><a id="settings-link" href="#">Settings →</a></p>
+    <div id="app">
+      <header>
+        <h1>HHRH Screener</h1>
+        <p><a id="settings-link" href="#">Settings</a></p>
+      </header>
+
+      <section id="evaluate-section">
+        <button id="evaluate-btn" type="button">Evaluate</button>
+      </section>
+
+      <section id="result-section" hidden>
+        <div id="result-tier"></div>
+        <div id="result-score"></div>
+        <div id="result-matched-skills"></div>
+        <div id="result-missing-skills"></div>
+        <div id="result-rationale"></div>
+        <div id="result-error" class="error-message"></div>
+      </section>
+
+      <section id="storage-section">
+        <div id="storage-usage">Storage: loading...</div>
+      </section>
+
+      <section id="history-section">
+        <h2>Recent Candidates</h2>
+        <div id="candidate-list">Loading...</div>
+      </section>
+    </div>
     <script type="module" src="./index.ts"></script>
   </body>
 </html>
