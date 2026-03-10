@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-profile-parsing 02-03-PLAN.md — SPA content script and PROFILE_PARSED handler
-last_updated: "2026-03-09T20:32:46.529Z"
+stopped_at: Completed 03-scoring-pipeline 03-04-PLAN.md — candidate CRUD helpers in storage.ts
+last_updated: "2026-03-10T13:21:49.300Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 11
-  completed_plans: 10
+  completed_phases: 2
+  total_plans: 17
+  completed_plans: 13
   percent: 14
 ---
 
@@ -56,6 +56,8 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 02-profile-parsing P01 | 15 | 3 tasks | 7 files |
 | Phase 02-profile-parsing P02 | 125 | 1 tasks | 1 files |
 | Phase 02-profile-parsing P03 | 3 | 2 tasks | 3 files |
+| Phase 03-scoring-pipeline P04 | 5 | 2 tasks | 2 files |
+| Phase 03-scoring-pipeline P01 | 5 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -87,6 +89,8 @@ Recent decisions affecting current work:
 - [Phase 02-profile-parsing]: wxt/utils/match-patterns instead of wxt/sandbox: wxt/sandbox specifier does not exist in the installed WXT version
 - [Phase 02-profile-parsing]: Debounce applied to extraction trigger: 400ms debounce deduplicates multiple pushState events per LinkedIn SPA navigation
 - [Phase 02-profile-parsing]: Module-level lastParsedProfile in background.ts: Phase 3 reads most recent profile via getLastParsedProfile() without additional message round-trip
+- [Phase 03-scoring-pipeline]: getAllCandidates sorts by evaluatedAt descending using String.localeCompare — ISO 8601 strings sort correctly without Date parsing
+- [Phase 03-scoring-pipeline]: getCandidateIndex private helper pattern mirrors getJdIndex — avoids duplicating CANDIDATE_INDEX read across three functions
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:32:46.527Z
-Stopped at: Completed 02-profile-parsing 02-03-PLAN.md — SPA content script and PROFILE_PARSED handler
+Last session: 2026-03-10T13:21:38.922Z
+Stopped at: Completed 03-scoring-pipeline 03-04-PLAN.md — candidate CRUD helpers in storage.ts
 Resume file: None

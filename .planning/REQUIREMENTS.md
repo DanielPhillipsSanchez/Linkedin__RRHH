@@ -36,9 +36,9 @@
 
 ### Candidate Storage
 
-- [ ] **STORE-01**: Evaluated candidate record (name, title, LinkedIn URL, tier, score, matched skills, missing skills, evaluation date) is saved to browser local storage
-- [ ] **STORE-02**: Storage usage indicator is visible in the extension so the recruiter knows how much space is being used
-- [ ] **STORE-03**: Recruiter can view previously evaluated candidates in the extension panel
+- [x] **STORE-01**: Evaluated candidate record (name, title, LinkedIn URL, tier, score, matched skills, missing skills, evaluation date) is saved to browser local storage
+- [x] **STORE-02**: Storage usage indicator is visible in the extension so the recruiter knows how much space is being used
+- [x] **STORE-03**: Recruiter can view previously evaluated candidates in the extension panel
 
 ### Messaging
 
