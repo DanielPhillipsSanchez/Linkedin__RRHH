@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-scoring-pipeline 03-01-PLAN.md — scorer test scaffold and skeleton modules (Wave 0 RED)
-last_updated: "2026-03-10T13:21:58.148Z"
+stopped_at: Completed 03-scoring-pipeline 03-02-PLAN.md — keyword scoring engine and tier assignment
+last_updated: "2026-03-10T13:22:59.897Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 17
-  completed_plans: 13
+  completed_plans: 14
   percent: 14
 ---
 
@@ -58,6 +58,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 02-profile-parsing P03 | 3 | 2 tasks | 3 files |
 | Phase 03-scoring-pipeline P04 | 5 | 2 tasks | 2 files |
 | Phase 03-scoring-pipeline P01 | 5 | 1 tasks | 4 files |
+| Phase 03-scoring-pipeline P02 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 03-scoring-pipeline]: getCandidateIndex private helper pattern mirrors getJdIndex — avoids duplicating CANDIDATE_INDEX read across three functions
 - [Phase 03-01]: runKeywordPass returns Skill[] for unmatchedSkills so callers can filter by weight to derive mandatory-only missingSkills without extra lookup
 - [Phase 03-01]: Tier boundary 70=L3: score >= 71 is L2, score >= 60 (and <= 70) is L3 — exact boundary documented in test cases
+- [Phase 03-scoring-pipeline]: computeScore Set<string> uses verbatim JD skill text — normalisation only inside skillMatches, runKeywordPass pushes skill.text directly
+- [Phase 03-scoring-pipeline]: runKeywordPass returns unmatchedSkills as Skill[] (all weights); SCORE-07 mandatory-only filter is caller's responsibility
+- [Phase 03-scoring-pipeline]: Tier thresholds hardcoded (>=80 L1, >=71 L2, >=60 L3) — configurable thresholds deferred to v2
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:21:58.147Z
-Stopped at: Completed 03-scoring-pipeline 03-01-PLAN.md — scorer test scaffold and skeleton modules (Wave 0 RED)
+Last session: 2026-03-10T13:22:59.895Z
+Stopped at: Completed 03-scoring-pipeline 03-02-PLAN.md — keyword scoring engine and tier assignment
 Resume file: None
