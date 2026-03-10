@@ -1,7 +1,12 @@
 import type { CandidateProfile, ExtractionHealth } from '../parser/types';
 import type { Tier } from '../scorer/tiers';
 
-export type MessageType = 'VALIDATE_API_KEY' | 'PROFILE_PARSED' | 'EVALUATE';
+export type MessageType =
+  | 'VALIDATE_API_KEY'
+  | 'PROFILE_PARSED'
+  | 'EVALUATE'
+  | 'GENERATE_MESSAGE'
+  | 'SAVE_MESSAGE';
 
 export interface ValidateApiKeyMessage {
   type: 'VALIDATE_API_KEY';
@@ -36,4 +41,30 @@ export interface EvaluateResult {
   warning?: string;
 }
 
-export type ExtensionMessage = ValidateApiKeyMessage | ProfileParsedMessage | EvaluateMessage;
+export interface GenerateMessageMessage {
+  type: 'GENERATE_MESSAGE';
+  candidateId: string;
+}
+
+export interface GenerateMessageResult {
+  message: string;
+  error?: string;
+}
+
+export interface SaveMessageMessage {
+  type: 'SAVE_MESSAGE';
+  candidateId: string;
+  messageText: string;
+}
+
+export interface SaveMessageResult {
+  saved: boolean;
+  error?: string;
+}
+
+export type ExtensionMessage =
+  | ValidateApiKeyMessage
+  | ProfileParsedMessage
+  | EvaluateMessage
+  | GenerateMessageMessage
+  | SaveMessageMessage;

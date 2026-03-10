@@ -1,10 +1,11 @@
-import { getApiKey, getActiveJdId, getAllJds, saveCandidate } from '../src/storage/storage';
-import type { ProfileParsedMessage, EvaluateResult } from '../src/shared/messages';
+import { getApiKey, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
+import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
 import { runKeywordPass, computeScore } from '../src/scorer/scorer';
 import { assignTier, TIER_LABELS } from '../src/scorer/tiers';
 import { refineWithClaude } from '../src/scorer/claude';
+import { generateOutreachMessage } from '../src/scorer/messenger';
 
 let lastParsedProfile: { profile: CandidateProfile; health: ExtractionHealth } | null = null;
 
@@ -176,6 +177,58 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   };
 }
 
+export async function handleGenerateMessage(candidateId: string): Promise<GenerateMessageResult> {
+  const candidate = await getCandidate(candidateId);
+  if (!candidate) return { message: '', error: 'Candidate not found' };
+
+  if (candidate.tier === 'rejected') return { message: '', error: 'No outreach message for rejected candidates' };
+
+  const apiKey = await getApiKey();
+  if (!apiKey) return { message: '', error: 'No API key — please add your Claude API key in Options' };
+
+  const jds = await getAllJds();
+  const jd = jds.find((j) => j.id === candidate.jdId);
+  const jdTitle = jd?.title ?? 'the open role';
+
+  const stored = getLastParsedProfile();
+  const profile: CandidateProfile = stored?.profile ?? {
+    name: candidate.name,
+    headline: candidate.linkedinHeadline,
+    about: '',
+    skills: candidate.matchedSkills,
+    experience: [],
+    education: [],
+    profileUrl: candidate.profileUrl,
+  };
+
+  const result = await generateOutreachMessage(
+    apiKey,
+    profile,
+    candidate.tier as Exclude<typeof candidate.tier, 'rejected'>,
+    candidate.matchedSkills,
+    candidate.missingSkills,
+    jdTitle,
+  );
+
+  if (result.message) {
+    candidate.outreachMessage = result.message;
+    await saveCandidate(candidate);
+  }
+
+  return result;
+}
+
+export async function handleSaveMessage(candidateId: string, messageText: string): Promise<SaveMessageResult> {
+  const candidate = await getCandidate(candidateId);
+  if (!candidate) return { saved: false, error: 'Candidate not found' };
+
+  candidate.messageSentText = messageText;
+  candidate.messageSentAt = new Date().toISOString();
+  await saveCandidate(candidate);
+
+  return { saved: true };
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'VALIDATE_API_KEY') {
@@ -194,6 +247,16 @@ export default defineBackground(() => {
     if (message.type === 'EVALUATE') {
       handleEvaluate().then(sendResponse).catch((err) => sendResponse({ error: (err as Error).message }));
       return true; // CRITICAL: keep channel open for async response
+    }
+
+    if (message.type === 'GENERATE_MESSAGE') {
+      handleGenerateMessage(message.candidateId).then(sendResponse).catch((err) => sendResponse({ message: '', error: (err as Error).message }));
+      return true;
+    }
+
+    if (message.type === 'SAVE_MESSAGE') {
+      handleSaveMessage(message.candidateId, message.messageText).then(sendResponse).catch((err) => sendResponse({ saved: false, error: (err as Error).message }));
+      return true;
     }
   });
 });

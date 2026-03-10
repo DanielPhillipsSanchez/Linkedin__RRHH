@@ -1,15 +1,15 @@
 import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates } from '../../src/storage/storage';
-import type { EvaluateResult } from '../../src/shared/messages';
+import type { EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../../src/shared/messages';
 import { TIER_LABELS } from '../../src/scorer/tiers';
+import { candidatesToCsv, downloadCsv } from '../../src/shared/csv';
 
-// ---- Settings link ----
+let currentCandidateId: string | null = null;
+let currentProfileUrl: string | null = null;
 
 document.getElementById('settings-link')?.addEventListener('click', (e) => {
   e.preventDefault();
   browser.runtime.openOptionsPage();
 });
-
-// ---- Storage usage ----
 
 async function renderStorageUsage(): Promise<void> {
   const el = document.getElementById('storage-usage');
@@ -23,8 +23,6 @@ async function renderStorageUsage(): Promise<void> {
     el.textContent = `Storage: ${usedKb} KB / ${quotaMb} MB`;
   }
 }
-
-// ---- Candidate history ----
 
 async function renderCandidateList(): Promise<void> {
   const listEl = document.getElementById('candidate-list');
@@ -48,8 +46,6 @@ async function renderCandidateList(): Promise<void> {
   listEl.appendChild(ul);
 }
 
-// ---- Result display ----
-
 function showResult(result: EvaluateResult): void {
   const section = document.getElementById('result-section');
   if (!section) return;
@@ -63,7 +59,6 @@ function showResult(result: EvaluateResult): void {
   const missingEl = document.getElementById('result-missing-skills')!;
   const rationaleEl = document.getElementById('result-rationale')!;
 
-  // Clear previous state
   errorEl.textContent = '';
   tierEl.textContent = '';
   scoreEl.textContent = '';
@@ -76,7 +71,6 @@ function showResult(result: EvaluateResult): void {
     return;
   }
 
-  // Non-fatal warning (e.g. Claude API key invalid — score is keyword-only)
   if (result.warning) {
     errorEl.textContent = `Warning: ${result.warning}`;
   }
@@ -105,9 +99,26 @@ function showResult(result: EvaluateResult): void {
   );
 
   rationaleEl.textContent = result.rationale;
+
+  currentCandidateId = result.candidateId;
+
+  const msgSection = document.getElementById('message-section');
+  if (msgSection && result.tier !== 'rejected') {
+    msgSection.hidden = false;
+    const textarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
+    textarea.value = '';
+    setMessageButtonsEnabled(false);
+    document.getElementById('message-status')!.textContent = '';
+  } else if (msgSection) {
+    msgSection.hidden = true;
+  }
 }
 
-// ---- Evaluate button ----
+function setMessageButtonsEnabled(enabled: boolean): void {
+  (document.getElementById('copy-msg-btn') as HTMLButtonElement).disabled = !enabled;
+  (document.getElementById('open-linkedin-btn') as HTMLButtonElement).disabled = !enabled;
+  (document.getElementById('mark-sent-btn') as HTMLButtonElement).disabled = !enabled;
+}
 
 document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('evaluate-btn') as HTMLButtonElement;
@@ -115,9 +126,11 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   btn.textContent = 'Evaluating...';
 
   try {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    currentProfileUrl = tab?.url ?? null;
+
     const result = await browser.runtime.sendMessage({ type: 'EVALUATE' }) as EvaluateResult | undefined;
     if (result === undefined) {
-      // Chrome MV3: background service worker may not have been running — show actionable error
       showResult({
         score: 0,
         tier: 'rejected',
@@ -130,7 +143,6 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
       });
     } else {
       showResult(result);
-      // Refresh candidate history after evaluation
       await renderCandidateList();
     }
   } catch (err) {
@@ -146,7 +158,96 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   }
 });
 
-// ---- Init ----
+document.getElementById('generate-msg-btn')?.addEventListener('click', async () => {
+  if (!currentCandidateId) return;
+
+  const btn = document.getElementById('generate-msg-btn') as HTMLButtonElement;
+  const statusEl = document.getElementById('message-status')!;
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  statusEl.textContent = '';
+
+  try {
+    const result = await browser.runtime.sendMessage({
+      type: 'GENERATE_MESSAGE',
+      candidateId: currentCandidateId,
+    }) as GenerateMessageResult | undefined;
+
+    if (result?.message) {
+      (document.getElementById('message-textarea') as HTMLTextAreaElement).value = result.message;
+      setMessageButtonsEnabled(true);
+    } else {
+      statusEl.textContent = result?.error ?? 'Failed to generate message';
+      statusEl.className = 'error-message';
+    }
+  } catch (err) {
+    statusEl.textContent = err instanceof Error ? err.message : String(err);
+    statusEl.className = 'error-message';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Message';
+  }
+});
+
+document.getElementById('copy-msg-btn')?.addEventListener('click', async () => {
+  const textarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
+  const statusEl = document.getElementById('message-status')!;
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    statusEl.textContent = 'Copied!';
+    statusEl.className = 'success-message';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  } catch {
+    statusEl.textContent = 'Copy failed — please select and copy manually';
+    statusEl.className = 'error-message';
+  }
+});
+
+document.getElementById('open-linkedin-btn')?.addEventListener('click', async () => {
+  if (!currentProfileUrl) return;
+  const profilePath = new URL(currentProfileUrl).pathname;
+  const msgUrl = `https://www.linkedin.com/messaging/compose/?recipient=${encodeURIComponent(profilePath)}`;
+  await browser.tabs.create({ url: msgUrl });
+});
+
+document.getElementById('mark-sent-btn')?.addEventListener('click', async () => {
+  if (!currentCandidateId) return;
+  const textarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
+  const statusEl = document.getElementById('message-status')!;
+
+  const result = await browser.runtime.sendMessage({
+    type: 'SAVE_MESSAGE',
+    candidateId: currentCandidateId,
+    messageText: textarea.value,
+  }) as SaveMessageResult | undefined;
+
+  if (result?.saved) {
+    statusEl.textContent = 'Message marked as sent';
+    statusEl.className = 'success-message';
+    await renderCandidateList();
+  } else {
+    statusEl.textContent = result?.error ?? 'Failed to save';
+    statusEl.className = 'error-message';
+  }
+});
+
+document.getElementById('export-csv-btn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('export-csv-btn') as HTMLButtonElement;
+  btn.disabled = true;
+  try {
+    const candidates = await getAllCandidates();
+    if (candidates.length === 0) {
+      btn.textContent = 'No candidates to export';
+      setTimeout(() => { btn.textContent = 'Export CSV'; btn.disabled = false; }, 2000);
+      return;
+    }
+    const csv = candidatesToCsv(candidates);
+    const date = new Date().toISOString().substring(0, 10);
+    downloadCsv(csv, `hhrh-candidates-${date}.csv`);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 renderStorageUsage();
 renderCandidateList();

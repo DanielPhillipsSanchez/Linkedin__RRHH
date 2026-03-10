@@ -27,6 +27,22 @@
         <div id="result-error" class="error-message"></div>
       </section>
 
+      <section id="message-section" hidden>
+        <h2>Outreach Message</h2>
+        <button id="generate-msg-btn" type="button">Generate Message</button>
+        <textarea id="message-textarea" rows="6" placeholder="Message will appear here..."></textarea>
+        <div id="message-actions">
+          <button id="copy-msg-btn" type="button" disabled>Copy</button>
+          <button id="open-linkedin-btn" type="button" disabled>Open LinkedIn Message</button>
+          <button id="mark-sent-btn" type="button" disabled>Mark as Sent</button>
+        </div>
+        <div id="message-status"></div>
+      </section>
+
+      <section id="export-section">
+        <button id="export-csv-btn" type="button">Export CSV</button>
+      </section>
+
       <section id="storage-section">
         <div id="storage-usage">Storage: loading...</div>
       </section>

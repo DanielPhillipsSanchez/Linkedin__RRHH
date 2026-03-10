@@ -105,6 +105,11 @@ export async function getAllCandidates(): Promise<CandidateRecord[]> {
   return records.sort((a, b) => b.evaluatedAt.localeCompare(a.evaluatedAt));
 }
 
+export async function getCandidate(id: string): Promise<CandidateRecord | undefined> {
+  const result = await browser.storage.local.get(STORAGE_KEYS.candidate(id));
+  return result[STORAGE_KEYS.candidate(id)] as CandidateRecord | undefined;
+}
+
 export async function deleteCandidate(id: string): Promise<void> {
   const ids = await getCandidateIndex();
   const updated = ids.filter((existingId) => existingId !== id);
