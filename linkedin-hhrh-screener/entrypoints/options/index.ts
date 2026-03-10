@@ -3,6 +3,7 @@
 
 import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn } from '../../src/storage/storage';
 import type { JobDescription, Skill } from '../../src/storage/schema';
+import * as XLSX from 'xlsx';
 
 // ---- Anthropic API Key ----
 
@@ -157,6 +158,77 @@ async function renderActiveJdSelector(): Promise<void> {
   });
 }
 
+// ---- Excel JD Import ----
+
+// Column name aliases (case-insensitive) → canonical field
+const COL_ALIASES: Record<string, string> = {
+  título: 'title', titulo: 'title', title: 'title', 'job title': 'title', puesto: 'title',
+  descripción: 'description', descripcion: 'description', description: 'description', 'job description': 'description', oferta: 'description',
+  habilidades: 'skills', skills: 'skills', competencias: 'skills',
+  experiencia: 'experience', experience: 'experience',
+  idiomas: 'languages', languages: 'languages',
+  'lenguajes técnicos': 'tech', 'lenguajes tecnicos': 'tech', 'technical languages': 'tech', tecnologías: 'tech', tecnologias: 'tech', tech: 'tech',
+};
+
+function normalizeColName(name: string): string {
+  return COL_ALIASES[name.trim().toLowerCase()] ?? 'other';
+}
+
+async function handleExcelImport(file: File): Promise<void> {
+  const statusEl = document.getElementById('jd-excel-status') as HTMLElement;
+  statusEl.textContent = 'Procesando...';
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
+
+    if (rows.length === 0) {
+      statusEl.textContent = 'El archivo está vacío o no tiene el formato esperado.';
+      return;
+    }
+
+    let imported = 0;
+    for (const row of rows) {
+      const fields: Record<string, string> = {};
+      for (const [key, value] of Object.entries(row)) {
+        const canonical = normalizeColName(key);
+        if (canonical !== 'other') {
+          fields[canonical] = String(value).trim();
+        }
+      }
+
+      const title = fields['title'] || file.name.replace(/\.(xlsx|xls)$/i, '');
+      if (!title) continue;
+
+      const parts: string[] = [];
+      if (fields['description']) parts.push(fields['description']);
+      if (fields['experience']) parts.push(`Experiencia: ${fields['experience']}`);
+      if (fields['skills']) parts.push(`Habilidades: ${fields['skills']}`);
+      if (fields['languages']) parts.push(`Idiomas: ${fields['languages']}`);
+      if (fields['tech']) parts.push(`Lenguajes técnicos: ${fields['tech']}`);
+      const rawText = parts.join('\n\n') || Object.values(row).join('\n');
+
+      const jd: JobDescription = {
+        id: crypto.randomUUID(),
+        title,
+        rawText,
+        skills: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveJd(jd);
+      imported++;
+    }
+
+    statusEl.textContent = `${imported} oferta(s) importada(s).`;
+    await renderJdList();
+  } catch (err) {
+    statusEl.textContent = `Error al leer el archivo: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
+
 // ---- Initialise ----
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -246,5 +318,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (target.name === 'active-jd') {
       await setActiveJdId(target.value);
     }
+  });
+
+  // Excel import
+  const excelInput = document.getElementById('jd-excel-input') as HTMLInputElement;
+  excelInput?.addEventListener('change', async () => {
+    const file = excelInput.files?.[0];
+    if (!file) return;
+    await handleExcelImport(file);
+    excelInput.value = ''; // reset so same file can be re-selected
   });
 });

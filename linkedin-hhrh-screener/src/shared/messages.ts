@@ -6,7 +6,8 @@ export type MessageType =
   | 'PROFILE_PARSED'
   | 'EVALUATE'
   | 'GENERATE_MESSAGE'
-  | 'SAVE_MESSAGE';
+  | 'SAVE_MESSAGE'
+  | 'SAVE_PHONE';
 
 export interface ValidateApiKeyMessage {
   type: 'VALIDATE_API_KEY';
@@ -62,9 +63,21 @@ export interface SaveMessageResult {
   error?: string;
 }
 
+export interface SavePhoneMessage {
+  type: 'SAVE_PHONE';
+  candidateId: string;
+  phoneNumber: string;
+}
+
+export interface SavePhoneResult {
+  saved: boolean;
+  error?: string;
+}
+
 export type ExtensionMessage =
   | ValidateApiKeyMessage
   | ProfileParsedMessage
   | EvaluateMessage
   | GenerateMessageMessage
-  | SaveMessageMessage;
+  | SaveMessageMessage
+  | SavePhoneMessage;

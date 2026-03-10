@@ -2,21 +2,18 @@ import type { CandidateProfile } from '../parser/types';
 import type { Tier } from './tiers';
 import { anthropicComplete } from './anthropic';
 
-const TONE_MAP: Record<Exclude<Tier, 'rejected'>, { label: string; instruction: string }> = {
+const TONE_MAP: Record<Exclude<Tier, 'rejected'>, { instruction: string }> = {
   L1: {
-    label: 'direct and enthusiastic',
     instruction:
-      'Write a direct, enthusiastic outreach message. The candidate is an excellent match — convey genuine excitement about their background and invite them to discuss the role immediately.',
+      'El candidato encaja muy bien con el perfil. Escríbele un mensaje directo y cercano mostrando interés genuino en su trayectoria y proponiéndole hablar pronto sobre la oportunidad.',
   },
   L2: {
-    label: 'exploratory',
     instruction:
-      'Write an exploratory outreach message. The candidate is a strong but not perfect match — express interest in learning more about their experience and suggest an informal conversation about the opportunity.',
+      'El candidato tiene un perfil interesante aunque no es un encaje perfecto. Escríbele un mensaje natural expresando curiosidad por su experiencia y sugiriendo una conversación informal para conocer más.',
   },
   L3: {
-    label: 'future-opportunity',
     instruction:
-      'Write a future-opportunity outreach message. The candidate has potential but is not a top match right now — frame this as keeping in touch for upcoming roles, and note that you will follow up in about a week.',
+      'El candidato tiene potencial pero no es el momento ideal. Escríbele un mensaje amable dejando la puerta abierta para futuras oportunidades y mencionando que te pondrás en contacto en aproximadamente una semana.',
   },
 };
 
@@ -28,26 +25,28 @@ function buildMessagePrompt(
   jdTitle: string,
 ): string {
   const tone = TONE_MAP[tier];
-  const titles = profile.experience.map((e) => `${e.title} at ${e.company}`).join('; ');
+  const titles = profile.experience.map((e) => `${e.title} en ${e.company}`).join('; ');
+  const firstName = profile.name.split(' ')[0];
 
   return [
-    `You are a professional recruiter writing a LinkedIn outreach message to a candidate. Tone: ${tone.label}.`,
+    'Eres un recruiter escribiendo un mensaje de LinkedIn en español. El mensaje debe sonar completamente natural, como si lo escribiera una persona real — no uses frases hechas de reclutador, no uses anglicismos innecesarios, no suenes a IA.',
     '',
     tone.instruction,
     '',
-    `Candidate name: ${profile.name}`,
-    `Headline: ${profile.headline}`,
-    `Experience: ${titles || 'Not available'}`,
-    `Role: ${jdTitle}`,
-    `Matched skills: ${matchedSkills.join(', ') || 'None identified'}`,
-    `Missing skills: ${missingSkills.join(', ') || 'None'}`,
+    `Nombre del candidato: ${profile.name} (usa solo su nombre de pila: ${firstName})`,
+    `Titular de LinkedIn: ${profile.headline}`,
+    `Experiencia: ${titles || 'No disponible'}`,
+    `Puesto al que aplica: ${jdTitle}`,
+    `Habilidades que coinciden: ${matchedSkills.join(', ') || 'Ninguna identificada'}`,
+    `Habilidades que faltan: ${missingSkills.join(', ') || 'Ninguna'}`,
     '',
-    'Requirements:',
-    '- Keep it under 300 words',
-    '- Use the candidate\'s first name',
-    '- Reference at least one specific thing from their experience',
-    '- Do NOT use placeholder brackets like [Company Name] — write naturally',
-    '- Return ONLY the message text, no subject line, no JSON wrapping',
+    'Reglas estrictas:',
+    '- Escribe en español natural y conversacional, sin tecnicismos de RR.HH.',
+    '- Máximo 200 palabras',
+    '- Menciona algo concreto de su experiencia o perfil',
+    '- No uses corchetes ni marcadores de posición — escribe directamente',
+    '- Evita palabras como: "oportunidad única", "encaja perfectamente", "potencial", "perfil ideal", "reto apasionante"',
+    '- No escribas asunto, firma ni formato JSON — solo el texto del mensaje',
   ].join('\n');
 }
 

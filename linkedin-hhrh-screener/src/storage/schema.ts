@@ -42,5 +42,6 @@ export interface CandidateRecord {
   jdId: string;
   messageSentAt?: string;     // ISO 8601
   messageSentText?: string;
+  phoneNumber?: string;       // manually entered by recruiter
   expiresAt: string;          // ISO 8601 — for GDPR cleanup
 }

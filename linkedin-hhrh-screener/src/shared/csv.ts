@@ -15,6 +15,7 @@ function formatDate(iso: string | undefined): string {
 
 const HEADERS = [
   'Name',
+  'Phone Number',
   'Title',
   'LinkedIn URL',
   'Tier',
@@ -32,6 +33,7 @@ export function candidatesToCsv(candidates: CandidateRecord[]): string {
   for (const c of candidates) {
     const row = [
       c.name,
+      c.phoneNumber ?? '',
       c.linkedinHeadline,
       c.profileUrl,
       TIER_LABELS[c.tier] ?? c.tier,

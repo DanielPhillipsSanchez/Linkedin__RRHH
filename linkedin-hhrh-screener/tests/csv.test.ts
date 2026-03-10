@@ -25,7 +25,7 @@ describe('candidatesToCsv', () => {
     const csv = candidatesToCsv([]);
     const header = csv.split('\n')[0];
     expect(header).toBe(
-      'Name,Title,LinkedIn URL,Tier,Match Score (%),Matched Skills,Missing Skills,Evaluation Date,Contact After,Outreach Message Sent',
+      'Name,Phone Number,Title,LinkedIn URL,Tier,Match Score (%),Matched Skills,Missing Skills,Evaluation Date,Contact After,Outreach Message Sent',
     );
   });
 
@@ -56,14 +56,15 @@ describe('candidatesToCsv', () => {
     const csv = candidatesToCsv([makeCandidate({ tier: 'L1' })]);
     const row = csv.split('\n')[1];
     const fields = row.split(',');
-    expect(fields[8]).toBe('');
+    // Column index 9 is Contact After (shifted +1 by Phone Number column)
+    expect(fields[9]).toBe('');
   });
 
   it('Outreach Message Sent is empty when messageSentText is undefined', () => {
     const csv = candidatesToCsv([makeCandidate()]);
     const fields = csv.split('\n')[1].split(',');
-    // Column index 9 is Outreach Message Sent
-    expect(fields[9]).toBe('');
+    // Column index 10 is Outreach Message Sent (shifted +1 by Phone Number column)
+    expect(fields[10]).toBe('');
   });
 
   it('includes sent message text', () => {

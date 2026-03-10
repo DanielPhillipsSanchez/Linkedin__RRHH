@@ -1,5 +1,5 @@
 import { getAnthropicApiKey, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
-import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../src/shared/messages';
+import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
 import { runKeywordPass, computeScore } from '../src/scorer/scorer';
@@ -222,6 +222,16 @@ export async function handleSaveMessage(candidateId: string, messageText: string
   return { saved: true };
 }
 
+export async function handleSavePhone(candidateId: string, phoneNumber: string): Promise<SavePhoneResult> {
+  const candidate = await getCandidate(candidateId);
+  if (!candidate) return { saved: false, error: 'Candidate not found' };
+
+  candidate.phoneNumber = phoneNumber;
+  await saveCandidate(candidate);
+
+  return { saved: true };
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'VALIDATE_API_KEY') {
@@ -249,6 +259,11 @@ export default defineBackground(() => {
 
     if (message.type === 'SAVE_MESSAGE') {
       handleSaveMessage(message.candidateId, message.messageText).then(sendResponse).catch((err) => sendResponse({ saved: false, error: (err as Error).message }));
+      return true;
+    }
+
+    if (message.type === 'SAVE_PHONE') {
+      handleSavePhone(message.candidateId, message.phoneNumber).then(sendResponse).catch((err) => sendResponse({ saved: false, error: (err as Error).message }));
       return true;
     }
   });

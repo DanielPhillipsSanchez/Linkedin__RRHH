@@ -1,5 +1,5 @@
 import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates } from '../../src/storage/storage';
-import type { EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../../src/shared/messages';
+import type { EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult } from '../../src/shared/messages';
 import { TIER_LABELS } from '../../src/scorer/tiers';
 import { candidatesToCsv, downloadCsv } from '../../src/shared/csv';
 
@@ -231,6 +231,26 @@ document.getElementById('mark-sent-btn')?.addEventListener('click', async () => 
   } else {
     statusEl.textContent = result?.error ?? 'Failed to save';
     statusEl.className = 'error-message';
+  }
+});
+
+document.getElementById('save-phone-btn')?.addEventListener('click', async () => {
+  if (!currentCandidateId) return;
+  const input = document.getElementById('phone-input') as HTMLInputElement;
+  const statusEl = document.getElementById('phone-status')!;
+  const phone = input.value.trim();
+
+  const result = await browser.runtime.sendMessage({
+    type: 'SAVE_PHONE',
+    candidateId: currentCandidateId,
+    phoneNumber: phone,
+  }) as SavePhoneResult | undefined;
+
+  if (result?.saved) {
+    statusEl.textContent = phone ? 'Teléfono guardado' : 'Teléfono eliminado';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  } else {
+    statusEl.textContent = result?.error ?? 'Error al guardar';
   }
 });
 
