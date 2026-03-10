@@ -52,7 +52,7 @@
 ### CSV Export
 
 - [x] **CSV-01**: Recruiter can export all evaluated candidates to a CSV file
-- [x] **CSV-02**: CSV includes: candidate name, title, LinkedIn URL, tier, match score
+- [x] **CSV-02**: CSV includes: candidate name, phone number, title, LinkedIn URL, tier, match score (11 columns total)
 - [x] **CSV-03**: CSV includes: matched skills and missing skills (comma-separated) per candidate
 - [x] **CSV-04**: CSV includes: evaluation date and "Contact After" date for Layer 3 candidates (evaluation date + 7 days)
 - [x] **CSV-05**: CSV includes: outreach message text that was sent
