@@ -3,11 +3,7 @@
 // All phases import from here; never hardcode key strings elsewhere.
 
 export const STORAGE_KEYS = {
-  API_KEY: 'settings:apiKey', // deprecated — kept for migration
-  SF_ACCOUNT_URL: 'settings:sfAccountUrl',
-  SF_PAT_TOKEN: 'settings:sfPatToken',
-  SF_WAREHOUSE: 'settings:sfWarehouse',
-  CLAUDE_API_KEY: 'settings:claudeApiKey', // Developer mode — direct Anthropic API
+  ANTHROPIC_API_KEY: 'settings:anthropicApiKey',
   ACTIVE_JD_ID: 'settings:activeJdId',
   DATA_RETENTION_DAYS: 'settings:dataRetentionDays',
   JD_INDEX: 'jd:index',
@@ -28,14 +24,6 @@ export interface JobDescription {
   skills: Skill[];     // Tagged skill list
   createdAt: string;   // ISO 8601
   updatedAt: string;   // ISO 8601
-}
-
-export interface Settings {
-  sfAccountUrl?: string;       // e.g. "https://lxb35875.snowflakecomputing.com"
-  sfPatToken?: string;         // Snowflake Programmatic Access Token
-  sfWarehouse?: string;        // e.g. "COMPUTE_WH"
-  activeJdId?: string;         // UUID of selected JD
-  dataRetentionDays: number;   // Default 90
 }
 
 // CandidateRecord used by Phase 3+; defined here for schema completeness
