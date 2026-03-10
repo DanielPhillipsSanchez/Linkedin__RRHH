@@ -69,7 +69,15 @@ Plans:
   3. The extension displays Claude's brief rationale explaining why the candidate received that tier
   4. Mandatory skills carry higher weight than nice-to-have skills in the final score
   5. The evaluated candidate record (name, URL, tier, score, matched/missing skills, date) is saved to local storage and visible in the history view; recruiter can see current storage usage
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0: scorer test scaffold (RED) + src/scorer skeleton files
+- [ ] 03-02-PLAN.md — Wave 1: scorer.ts + tiers.ts implementation (keyword pass, weighted score, tier assignment GREEN)
+- [ ] 03-03-PLAN.md — Wave 1: claude.ts implementation (Claude API refinement, direct fetch, safe JSON parsing GREEN)
+- [ ] 03-04-PLAN.md — Wave 1: candidate CRUD in storage.ts + storage.test.ts candidate tests GREEN
+- [ ] 03-05-PLAN.md — Wave 2: EVALUATE message types + background.ts handler wiring all modules
+- [ ] 03-06-PLAN.md — Wave 3: minimal Evaluate popup UI + human end-to-end verification checkpoint
 
 ### Phase 4: Output Layer
 **Goal**: The recruiter can review, edit, and act on an AI-generated outreach message from inside the extension panel, and can export all evaluated candidates to CSV — the full recruiter workflow is usable from start to finish
@@ -113,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/7 | In Progress|  |
 | 2. Profile Parsing | 3/4 | In Progress|  |
-| 3. Scoring Pipeline | 0/TBD | Not started | - |
+| 3. Scoring Pipeline | 0/6 | Not started | - |
 | 4. Output Layer | 0/TBD | Not started | - |
 | 5. Scheduling and Notifications | 0/TBD | Not started | - |
 | 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
