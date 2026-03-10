@@ -23,31 +23,34 @@ function waitForProfileAndExtract(waitForTitleChange = false): void {
     observer?.disconnect();
     observer = null;
     if (debounceTimer !== null) { clearTimeout(debounceTimer); debounceTimer = null; }
+    console.log('[HHRH] extracting — title:', document.title, 'url:', location.href);
     const { profile, health } = parseProfile(document, location.href);
+    console.log('[HHRH] parsed name:', profile.name, '| health.ok:', health.ok);
     const msg: ProfileParsedMessage = { type: 'PROFILE_PARSED', profile, health };
     browser.runtime.sendMessage(msg).catch((err) => {
-      console.warn('[HHRH] sendMessage failed (background restarting?):', err);
+      console.warn('[HHRH] sendMessage failed:', err);
     });
   }
 
   if (!waitForTitleChange) {
-    // Initial load: title already reflects this profile — extract after short settle
+    console.log('[HHRH] initial load — title:', document.title, 'scheduling extract in 500ms');
     debounceTimer = setTimeout(extract, 500);
     return;
   }
 
+  console.log('[HHRH] SPA nav — captured title:', capturedTitle, '— waiting for change');
   // SPA navigation: wait for title to change from the captured snapshot, then extract
   observer = new MutationObserver(() => {
     if (document.title !== capturedTitle) {
       const name = document.title.split('|')[0].trim();
+      console.log('[HHRH] title changed to:', document.title);
       if (name && !name.toLowerCase().includes('linkedin')) {
         observer?.disconnect();
         observer = null;
-        debounceTimer = setTimeout(extract, 300); // extra settle for body render
+        debounceTimer = setTimeout(extract, 300);
       }
     }
   });
-  // Observe <html> so we catch <title> changes in <head>
   observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
 
   // Fallback: extract after 5s regardless

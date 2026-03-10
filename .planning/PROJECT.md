@@ -16,7 +16,8 @@ A recruiter can open any LinkedIn profile and know within seconds whether to pur
 
 ### Active
 
-- [ ] Extension runs on Chrome and Safari
+- [ ] Extension ru
+ns on Chrome and Safari
 - [ ] Recruiter can save one or more job descriptions inside the extension
 - [ ] Extension parses skills and experience from the active LinkedIn profile page
 - [ ] Extension scores candidate skills against selected JD using hybrid matching (keyword + Claude API)

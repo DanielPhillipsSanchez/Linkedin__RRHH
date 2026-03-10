@@ -25,14 +25,14 @@
 
 ### Scoring
 
-- [ ] **SCORE-01**: Extension scores the parsed profile against the selected JD using keyword matching as a first pass
-- [ ] **SCORE-02**: Extension calls Claude API (from background service worker) to refine the score for ambiguous or synonym skills
-- [ ] **SCORE-03**: Mandatory skills have higher weight than nice-to-have skills in the final score
-- [ ] **SCORE-04**: Extension assigns the candidate a tier based on final match percentage: Layer 1 (80%+), Layer 2 (71–79%), Layer 3 (60–70%), Rejected (<60%)
-- [ ] **SCORE-05**: Extension displays the overall match percentage and tier label to the recruiter
-- [ ] **SCORE-06**: Extension displays the list of JD skills the candidate matches
-- [ ] **SCORE-07**: Extension displays the list of required skills the candidate is missing
-- [ ] **SCORE-08**: Extension displays Claude's brief rationale explaining the score and tier assignment
+- [x] **SCORE-01**: Extension scores the parsed profile against the selected JD using keyword matching as a first pass
+- [x] **SCORE-02**: Extension calls Claude API (from background service worker) to refine the score for ambiguous or synonym skills
+- [x] **SCORE-03**: Mandatory skills have higher weight than nice-to-have skills in the final score
+- [x] **SCORE-04**: Extension assigns the candidate a tier based on final match percentage: Layer 1 (80%+), Layer 2 (71–79%), Layer 3 (60–70%), Rejected (<60%)
+- [x] **SCORE-05**: Extension displays the overall match percentage and tier label to the recruiter
+- [x] **SCORE-06**: Extension displays the list of JD skills the candidate matches
+- [x] **SCORE-07**: Extension displays the list of required skills the candidate is missing
+- [x] **SCORE-08**: Extension displays Claude's brief rationale explaining the score and tier assignment
 
 ### Candidate Storage
 
