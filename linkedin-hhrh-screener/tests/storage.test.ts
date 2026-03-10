@@ -10,8 +10,11 @@ import {
   getActiveJdId,
   getStorageUsageBytes,
   STORAGE_QUOTA_BYTES,
+  saveCandidate,
+  getAllCandidates,
+  deleteCandidate,
 } from '../src/storage/storage';
-import type { JobDescription } from '../src/storage/schema';
+import type { JobDescription, CandidateRecord } from '../src/storage/schema';
 
 beforeEach(() => fakeBrowser.reset());
 afterEach(() => fakeBrowser.reset());
@@ -163,5 +166,105 @@ describe('getStorageUsageBytes', () => {
 describe('STORAGE_QUOTA_BYTES', () => {
   it('is 10MB (10 * 1024 * 1024)', () => {
     expect(STORAGE_QUOTA_BYTES).toBe(10 * 1024 * 1024);
+  });
+});
+
+// ---- Candidate CRUD ----
+
+function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecord {
+  return {
+    id: 'cand-001',
+    name: 'Jane Smith',
+    profileUrl: 'https://linkedin.com/in/janesmith',
+    linkedinHeadline: 'Senior Engineer',
+    score: 85,
+    tier: 'L1',
+    matchedSkills: ['TypeScript', 'React'],
+    missingSkills: [],
+    outreachMessage: '',
+    evaluatedAt: new Date().toISOString(),
+    jdId: 'jd-001',
+    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    ...overrides,
+  };
+}
+
+describe('saveCandidate', () => {
+  it('saves candidate and adds id to index', async () => {
+    const candidate = makeCandidate({ id: 'cand-001' });
+    await saveCandidate(candidate);
+    const candidates = await getAllCandidates();
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].id).toBe('cand-001');
+    expect(candidates[0].name).toBe('Jane Smith');
+    expect(candidates[0].score).toBe(85);
+    expect(candidates[0].tier).toBe('L1');
+  });
+
+  it('does not duplicate index entry on re-save (updates record)', async () => {
+    const candidate = makeCandidate({ id: 'cand-dedup' });
+    await saveCandidate(candidate);
+    await saveCandidate({ ...candidate, score: 90, tier: 'L2' });
+    const candidates = await getAllCandidates();
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].score).toBe(90);
+    expect(candidates[0].tier).toBe('L2');
+  });
+});
+
+describe('getAllCandidates', () => {
+  it('returns empty array when no candidates stored', async () => {
+    const candidates = await getAllCandidates();
+    expect(candidates).toEqual([]);
+  });
+
+  it('returns all saved candidates', async () => {
+    const c1 = makeCandidate({ id: 'cand-a', name: 'Alice' });
+    const c2 = makeCandidate({ id: 'cand-b', name: 'Bob' });
+    const c3 = makeCandidate({ id: 'cand-c', name: 'Carol' });
+    await saveCandidate(c1);
+    await saveCandidate(c2);
+    await saveCandidate(c3);
+    const candidates = await getAllCandidates();
+    expect(candidates).toHaveLength(3);
+    const ids = candidates.map((c) => c.id);
+    expect(ids).toContain('cand-a');
+    expect(ids).toContain('cand-b');
+    expect(ids).toContain('cand-c');
+  });
+
+  it('returns candidates sorted newest first by evaluatedAt', async () => {
+    const older = makeCandidate({
+      id: 'cand-older',
+      name: 'Older',
+      evaluatedAt: '2026-01-01T10:00:00.000Z',
+    });
+    const newer = makeCandidate({
+      id: 'cand-newer',
+      name: 'Newer',
+      evaluatedAt: '2026-03-01T10:00:00.000Z',
+    });
+    await saveCandidate(older);
+    await saveCandidate(newer);
+    const candidates = await getAllCandidates();
+    expect(candidates[0].id).toBe('cand-newer');
+    expect(candidates[1].id).toBe('cand-older');
+  });
+});
+
+describe('deleteCandidate', () => {
+  it('removes candidate from index and storage', async () => {
+    const c1 = makeCandidate({ id: 'cand-keep' });
+    const c2 = makeCandidate({ id: 'cand-remove' });
+    await saveCandidate(c1);
+    await saveCandidate(c2);
+    await deleteCandidate('cand-remove');
+    const candidates = await getAllCandidates();
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].id).toBe('cand-keep');
+  });
+
+  it('does not throw when deleting a nonexistent id', async () => {
+    await expect(deleteCandidate('nonexistent-id')).resolves.toBeUndefined();
   });
 });
