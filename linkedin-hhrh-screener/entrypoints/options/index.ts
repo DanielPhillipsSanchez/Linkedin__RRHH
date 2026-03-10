@@ -174,6 +174,15 @@ function normalizeColName(name: string): string {
   return COL_ALIASES[name.trim().toLowerCase()] ?? 'other';
 }
 
+function parseSkillsFromText(raw: string): Skill[] {
+  // Split by comma, semicolon, or newline; trim; deduplicate
+  return raw
+    .split(/[,;\n]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+    .map(text => ({ text, weight: 'mandatory' as Skill['weight'] }));
+}
+
 async function handleExcelImport(file: File): Promise<void> {
   const statusEl = document.getElementById('jd-excel-status') as HTMLElement;
   statusEl.textContent = 'Procesando...';
@@ -189,7 +198,8 @@ async function handleExcelImport(file: File): Promise<void> {
       return;
     }
 
-    let imported = 0;
+    let lastJdId: string | null = null;
+
     for (const row of rows) {
       const fields: Record<string, string> = {};
       for (const [key, value] of Object.entries(row)) {
@@ -202,27 +212,41 @@ async function handleExcelImport(file: File): Promise<void> {
       const title = fields['title'] || file.name.replace(/\.(xlsx|xls)$/i, '');
       if (!title) continue;
 
+      // Build rawText from all descriptive fields
       const parts: string[] = [];
       if (fields['description']) parts.push(fields['description']);
-      if (fields['experience']) parts.push(`Experiencia: ${fields['experience']}`);
-      if (fields['skills']) parts.push(`Habilidades: ${fields['skills']}`);
+      if (fields['experience']) parts.push(`Experiencia requerida: ${fields['experience']}`);
       if (fields['languages']) parts.push(`Idiomas: ${fields['languages']}`);
       if (fields['tech']) parts.push(`Lenguajes técnicos: ${fields['tech']}`);
+      if (fields['skills']) parts.push(`Habilidades: ${fields['skills']}`);
       const rawText = parts.join('\n\n') || Object.values(row).join('\n');
 
+      // Parse skills from skills + tech + languages columns
+      const allSkillText = [fields['skills'], fields['tech'], fields['languages']]
+        .filter(Boolean)
+        .join(', ');
+      const skills = parseSkillsFromText(allSkillText);
+
+      const jdId = crypto.randomUUID();
       const jd: JobDescription = {
-        id: crypto.randomUUID(),
+        id: jdId,
         title,
         rawText,
-        skills: [],
+        skills,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       await saveJd(jd);
-      imported++;
+      lastJdId = jdId;
     }
 
-    statusEl.textContent = `${imported} oferta(s) importada(s).`;
+    if (lastJdId) {
+      await setActiveJdId(lastJdId);
+      statusEl.textContent = 'Oferta importada y activada.';
+    } else {
+      statusEl.textContent = 'No se encontraron filas válidas en el archivo.';
+    }
+
     await renderJdList();
   } catch (err) {
     statusEl.textContent = `Error al leer el archivo: ${err instanceof Error ? err.message : String(err)}`;
