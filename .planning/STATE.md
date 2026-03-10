@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-scoring-pipeline 03-04-PLAN.md — candidate CRUD helpers in storage.ts
-last_updated: "2026-03-10T13:21:49.300Z"
+stopped_at: Completed 03-scoring-pipeline 03-01-PLAN.md — scorer test scaffold and skeleton modules (Wave 0 RED)
+last_updated: "2026-03-10T13:21:58.148Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
@@ -91,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase 02-profile-parsing]: Module-level lastParsedProfile in background.ts: Phase 3 reads most recent profile via getLastParsedProfile() without additional message round-trip
 - [Phase 03-scoring-pipeline]: getAllCandidates sorts by evaluatedAt descending using String.localeCompare — ISO 8601 strings sort correctly without Date parsing
 - [Phase 03-scoring-pipeline]: getCandidateIndex private helper pattern mirrors getJdIndex — avoids duplicating CANDIDATE_INDEX read across three functions
+- [Phase 03-01]: runKeywordPass returns Skill[] for unmatchedSkills so callers can filter by weight to derive mandatory-only missingSkills without extra lookup
+- [Phase 03-01]: Tier boundary 70=L3: score >= 71 is L2, score >= 60 (and <= 70) is L3 — exact boundary documented in test cases
 
 ### Pending Todos
 
@@ -105,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:21:38.922Z
-Stopped at: Completed 03-scoring-pipeline 03-04-PLAN.md — candidate CRUD helpers in storage.ts
+Last session: 2026-03-10T13:21:58.147Z
+Stopped at: Completed 03-scoring-pipeline 03-01-PLAN.md — scorer test scaffold and skeleton modules (Wave 0 RED)
 Resume file: None
