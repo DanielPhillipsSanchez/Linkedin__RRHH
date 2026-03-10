@@ -1,5 +1,6 @@
 import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates } from '../../src/storage/storage';
 import type { EvaluateResult } from '../../src/shared/messages';
+import { TIER_LABELS } from '../../src/scorer/tiers';
 
 // ---- Settings link ----
 
@@ -39,7 +40,8 @@ async function renderCandidateList(): Promise<void> {
   for (const c of candidates) {
     const li = document.createElement('li');
     const dateOnly = c.evaluatedAt.substring(0, 10);
-    li.textContent = `${c.name} — ${c.tierLabel} — ${c.score}% — ${dateOnly}`;
+    const label = TIER_LABELS[c.tier] ?? c.tier;
+    li.textContent = `${c.name} — ${label} — ${c.score}% — ${dateOnly}`;
     ul.appendChild(li);
   }
   listEl.innerHTML = '';
@@ -108,10 +110,24 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   btn.textContent = 'Evaluating...';
 
   try {
-    const result = await browser.runtime.sendMessage({ type: 'EVALUATE' }) as EvaluateResult;
-    showResult(result);
-    // Refresh candidate history after evaluation
-    await renderCandidateList();
+    const result = await browser.runtime.sendMessage({ type: 'EVALUATE' }) as EvaluateResult | undefined;
+    if (result === undefined) {
+      // Chrome MV3: background service worker may not have been running — show actionable error
+      showResult({
+        score: 0,
+        tier: 'rejected',
+        tierLabel: TIER_LABELS['rejected'],
+        matchedSkills: [],
+        missingSkills: [],
+        rationale: '',
+        candidateId: '',
+        error: 'Background service worker not ready — please reload the extension and try again',
+      });
+    } else {
+      showResult(result);
+      // Refresh candidate history after evaluation
+      await renderCandidateList();
+    }
   } catch (err) {
     const section = document.getElementById('result-section');
     if (section) section.hidden = false;
