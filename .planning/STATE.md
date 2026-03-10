@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-scoring-pipeline 03-02-PLAN.md — keyword scoring engine and tier assignment
-last_updated: "2026-03-10T13:22:59.897Z"
+stopped_at: Completed 03-scoring-pipeline 03-03-PLAN.md — Claude API refinement module
+last_updated: "2026-03-10T13:23:35.912Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 15
   percent: 14
 ---
 
@@ -59,6 +59,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 03-scoring-pipeline P04 | 5 | 2 tasks | 2 files |
 | Phase 03-scoring-pipeline P01 | 5 | 1 tasks | 4 files |
 | Phase 03-scoring-pipeline P02 | 8 | 2 tasks | 2 files |
+| Phase 03-scoring-pipeline P03 | 8 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,9 @@ Recent decisions affecting current work:
 - [Phase 03-scoring-pipeline]: computeScore Set<string> uses verbatim JD skill text — normalisation only inside skillMatches, runKeywordPass pushes skill.text directly
 - [Phase 03-scoring-pipeline]: runKeywordPass returns unmatchedSkills as Skill[] (all weights); SCORE-07 mandatory-only filter is caller's responsibility
 - [Phase 03-scoring-pipeline]: Tier thresholds hardcoded (>=80 L1, >=71 L2, >=60 L3) — configurable thresholds deferred to v2
+- [Phase 03-scoring-pipeline]: Direct fetch over @anthropic-ai/sdk in claude.ts: SDK may use Node.js globals incompatible with service worker; proven pattern from background.ts
+- [Phase 03-scoring-pipeline]: Model pinned to claude-haiku-4-5-20251001 (not claude-3-haiku-20240307 which is deprecated April 2026)
+- [Phase 03-scoring-pipeline]: JSON.parse failure in refineWithClaude returns graceful fallback instead of throwing — scoring degrades gracefully on unexpected Claude output
 
 ### Pending Todos
 
@@ -111,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:22:59.895Z
-Stopped at: Completed 03-scoring-pipeline 03-02-PLAN.md — keyword scoring engine and tier assignment
+Last session: 2026-03-10T13:23:35.910Z
+Stopped at: Completed 03-scoring-pipeline 03-03-PLAN.md — Claude API refinement module
 Resume file: None

@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/7 | In Progress|  |
 | 2. Profile Parsing | 3/4 | In Progress|  |
-| 3. Scoring Pipeline | 3/6 | In Progress|  |
+| 3. Scoring Pipeline | 4/6 | In Progress|  |
 | 4. Output Layer | 0/TBD | Not started | - |
 | 5. Scheduling and Notifications | 0/TBD | Not started | - |
 | 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
