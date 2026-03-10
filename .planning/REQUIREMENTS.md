@@ -108,8 +108,8 @@
 | PARSE-01 – PARSE-06 | Phase 2: Profile Parsing | Pending |
 | SCORE-01 – SCORE-08 | Phase 3: Scoring Pipeline | Pending |
 | STORE-01 – STORE-03 | Phase 3: Scoring Pipeline | Pending |
-| MSG-01 – MSG-06 | Phase 4: Output Layer | Pending |
-| CSV-01 – CSV-05 | Phase 4: Output Layer | Pending |
+| MSG-01 – MSG-06 | Phase 4: Output Layer | Complete (04-03, 2026-03-10) |
+| CSV-01 – CSV-05 | Phase 4: Output Layer | Complete (04-03, 2026-03-10) |
 | SCHED-01 – SCHED-04 | Phase 5: Scheduling and Notifications | Pending |
 | XBROW-01 – XBROW-03 | Phase 6: Safari Packaging and Cross-Browser Verification | Pending |
 
