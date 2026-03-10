@@ -1,4 +1,4 @@
-import { getApiKey, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
+import { getSnowflakeCredentials, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
 import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
@@ -6,6 +6,7 @@ import { runKeywordPass, computeScore } from '../src/scorer/scorer';
 import { assignTier, TIER_LABELS } from '../src/scorer/tiers';
 import { refineWithClaude } from '../src/scorer/claude';
 import { generateOutreachMessage } from '../src/scorer/messenger';
+import { validateCortexCredentials } from '../src/scorer/cortex';
 
 let lastParsedProfile: { profile: CandidateProfile; health: ExtractionHealth } | null = null;
 
@@ -20,25 +21,10 @@ export function _setLastParsedProfileForTest(
   lastParsedProfile = value;
 }
 
-export async function validateStoredApiKey(): Promise<{ valid: boolean; error?: string }> {
-  const apiKey = await getApiKey();
-  if (!apiKey) return { valid: false, error: 'No API key stored' };
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/models?limit=1', {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-    });
-
-    if (response.ok) return { valid: true };
-    if (response.status === 401) return { valid: false, error: 'Invalid API key' };
-    return { valid: false, error: `HTTP ${response.status}` };
-  } catch {
-    return { valid: false, error: 'Network error — check your connection' };
-  }
+export async function validateStoredCredentials(): Promise<{ valid: boolean; error?: string }> {
+  const creds = await getSnowflakeCredentials();
+  if (!creds) return { valid: false, error: 'No Snowflake credentials stored' };
+  return validateCortexCredentials(creds);
 }
 
 export async function handleEvaluate(): Promise<EvaluateResult> {
@@ -56,8 +42,8 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     };
   }
 
-  const apiKey = await getApiKey();
-  if (!apiKey) {
+  const creds = await getSnowflakeCredentials();
+  if (!creds) {
     return {
       score: 0,
       tier: 'rejected',
@@ -66,7 +52,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No API key — please add your Claude API key in Options',
+      error: 'No Snowflake credentials — please configure them in Options',
     };
   }
 
@@ -116,20 +102,20 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   // Keyword pass
   const { matchedSkills, unmatchedSkills } = runKeywordPass(jd.skills, profile.skills);
 
-  // Claude refinement (skip if nothing unmatched)
+  // Cortex refinement (skip if nothing unmatched)
   let additionalMatches: string[] = [];
   let rationale = '';
-  let claudeWarning: string | undefined;
+  let cortexWarning: string | undefined;
   if (unmatchedSkills.length > 0) {
-    const refined = await refineWithClaude(apiKey, profile, unmatchedSkills);
+    const refined = await refineWithClaude(creds, profile, unmatchedSkills);
     additionalMatches = refined.additionalMatches;
     rationale = refined.rationale;
     if (refined.claudeError === '401') {
-      claudeWarning = 'Claude API key invalid — please update it in Options. Score shown is keyword-only.';
+      cortexWarning = 'Snowflake auth failed — please update credentials in Options. Score shown is keyword-only.';
     } else if (refined.claudeError === 'network') {
-      claudeWarning = 'Claude API unreachable — score is keyword-only.';
+      cortexWarning = 'Snowflake unreachable — score is keyword-only.';
     } else if (refined.claudeError) {
-      claudeWarning = `Claude API error ${refined.claudeError} — score is keyword-only.`;
+      cortexWarning = `Cortex error: ${refined.claudeError} — score is keyword-only.`;
     }
   }
 
@@ -155,7 +141,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     tier,
     matchedSkills: [...allMatchedTexts],
     missingSkills,
-    outreachMessage: '', // Phase 4 fills this
+    outreachMessage: '',
     evaluatedAt: now,
     contactAfter:
       tier === 'L3' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
@@ -173,7 +159,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     missingSkills,
     rationale,
     candidateId: record.id,
-    ...(claudeWarning ? { warning: claudeWarning } : {}),
+    ...(cortexWarning ? { warning: cortexWarning } : {}),
   };
 }
 
@@ -183,8 +169,8 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
 
   if (candidate.tier === 'rejected') return { message: '', error: 'No outreach message for rejected candidates' };
 
-  const apiKey = await getApiKey();
-  if (!apiKey) return { message: '', error: 'No API key — please add your Claude API key in Options' };
+  const creds = await getSnowflakeCredentials();
+  if (!creds) return { message: '', error: 'No Snowflake credentials — please configure them in Options' };
 
   const jds = await getAllJds();
   const jd = jds.find((j) => j.id === candidate.jdId);
@@ -202,7 +188,7 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
   };
 
   const result = await generateOutreachMessage(
-    apiKey,
+    creds,
     profile,
     candidate.tier as Exclude<typeof candidate.tier, 'rejected'>,
     candidate.matchedSkills,
@@ -232,7 +218,7 @@ export async function handleSaveMessage(candidateId: string, messageText: string
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'VALIDATE_API_KEY') {
-      validateStoredApiKey().then(sendResponse);
+      validateStoredCredentials().then(sendResponse);
       return true; // CRITICAL: keep channel open for async response
     }
 

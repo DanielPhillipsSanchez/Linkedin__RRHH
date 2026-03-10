@@ -1,21 +1,27 @@
 /**
- * Single source of truth for all LinkedIn CSS selector strings.
- * No selector literal may appear anywhere else in src/.
- * PARSE-05 compliance: all selector changes happen here only.
+ * Single source of truth for LinkedIn profile section discovery.
+ * PARSE-05 compliance: all extraction logic references this file only.
+ *
+ * LinkedIn (as of March 2026) uses obfuscated CSS class names and no
+ * semantic IDs. Sections are discovered by finding <section> elements
+ * whose <h2> heading matches a known label. Text is extracted via
+ * innerText rather than fine-grained CSS selectors.
  */
-export const SELECTORS = {
-  name: 'title', // extracted from document.title via parseNameFromTitle()
-  headline: 'div.text-body-medium.break-words',
-  about: 'section[data-view-name="profile-card"] div.inline-show-more-text span[aria-hidden="true"]',
-  skillItem: 'a[data-field="skill_card_skill_topic"] span[aria-hidden="true"]',
-  experienceSection: '#experience',
-  experienceItem: 'li.artdeco-list__item',
-  experienceTitle: 'div.t-bold span[aria-hidden="true"]',
-  experienceCompany: 'span.t-14.t-normal:not(.t-black--light) > span[aria-hidden="true"]',
-  experienceDuration: 'span.pvs-entity__caption-wrapper[aria-hidden="true"]',
-  educationSection: '#education',
-  educationItem: 'li.artdeco-list__item',
-  educationSchool: 'span[aria-hidden="true"]:first-of-type',
-  educationDegree: '.t-14.t-normal:not(.t-black--light) > span[aria-hidden="true"]',
-  educationDuration: '.t-14.t-normal.t-black--light span[aria-hidden="true"]',
-} as const;
+
+export const SECTION_HEADINGS: Record<string, string> = {
+  skills: 'Skills',
+  experience: 'Experience',
+  education: 'Education',
+  about: 'About',
+};
+
+export function findSectionByHeading(doc: Document, heading: string): Element | null {
+  const sections = doc.querySelectorAll('section');
+  for (let i = 0; i < sections.length; i++) {
+    const h2 = sections[i].querySelector('h2');
+    if (h2 && h2.textContent?.trim() === heading) {
+      return sections[i];
+    }
+  }
+  return null;
+}

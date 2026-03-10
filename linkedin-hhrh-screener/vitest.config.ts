@@ -5,6 +5,6 @@ export default defineConfig({
   plugins: [WxtVitest()],
   test: {
     // @webext-core/fake-browser provides in-memory browser.* APIs
-    // No manual chrome.* mocking needed — use fakeBrowser.reset() in afterEach
+    setupFiles: ['./tests/setup.ts'],
   },
 });

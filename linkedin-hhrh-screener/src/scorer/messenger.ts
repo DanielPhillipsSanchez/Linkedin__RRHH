@@ -1,5 +1,6 @@
 import type { CandidateProfile } from '../parser/types';
 import type { Tier } from './tiers';
+import { cortexComplete, type CortexCredentials } from './cortex';
 
 const TONE_MAP: Record<Exclude<Tier, 'rejected'>, { label: string; instruction: string }> = {
   L1: {
@@ -51,7 +52,7 @@ function buildMessagePrompt(
 }
 
 export async function generateOutreachMessage(
-  apiKey: string,
+  creds: CortexCredentials,
   profile: CandidateProfile,
   tier: Exclude<Tier, 'rejected'>,
   matchedSkills: string[],
@@ -59,37 +60,15 @@ export async function generateOutreachMessage(
   jdTitle: string,
 ): Promise<{ message: string; error?: string }> {
   const prompt = buildMessagePrompt(profile, tier, matchedSkills, missingSkills, jdTitle);
+  const result = await cortexComplete(creds, prompt);
 
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: AbortSignal.timeout(30_000),
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-  } catch {
-    return { message: '', error: 'Network error generating message' };
+  if (result.error) {
+    return { message: '', error: result.error };
   }
 
-  if (!response.ok) {
-    return { message: '', error: `Claude API error ${response.status}` };
+  if (!result.text) {
+    return { message: '', error: 'Cortex returned empty message' };
   }
 
-  const data = (await response.json()) as { content: Array<{ type: string; text: string }> };
-  const text = data.content[0]?.text?.trim() ?? '';
-
-  if (!text) {
-    return { message: '', error: 'Claude returned empty message' };
-  }
-
-  return { message: text };
+  return { message: result.text };
 }

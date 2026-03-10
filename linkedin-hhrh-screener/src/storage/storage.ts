@@ -8,7 +8,7 @@ import type { JobDescription, CandidateRecord } from './schema';
 // Storage quota constant — Chrome 113+ allows 10MB for local storage
 export const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024; // 10MB
 
-// ---- API Key ----
+// ---- API Key (deprecated — kept for backward compat) ----
 
 export async function saveApiKey(key: string): Promise<void> {
   await browser.storage.local.set({ [STORAGE_KEYS.API_KEY]: key });
@@ -17,6 +17,47 @@ export async function saveApiKey(key: string): Promise<void> {
 export async function getApiKey(): Promise<string | undefined> {
   const result = await browser.storage.local.get(STORAGE_KEYS.API_KEY);
   return result[STORAGE_KEYS.API_KEY] as string | undefined;
+}
+
+// ---- Claude API Key (Developer Mode) ----
+
+export async function saveClaudeApiKey(key: string): Promise<void> {
+  await browser.storage.local.set({ [STORAGE_KEYS.CLAUDE_API_KEY]: key });
+}
+
+export async function getClaudeApiKey(): Promise<string | undefined> {
+  const result = await browser.storage.local.get(STORAGE_KEYS.CLAUDE_API_KEY);
+  const key = result[STORAGE_KEYS.CLAUDE_API_KEY] as string | undefined;
+  return key || undefined; // treat empty string as not set
+}
+
+// ---- Snowflake Credentials ----
+
+export interface SnowflakeCredentials {
+  accountUrl: string;
+  patToken: string;
+  warehouse: string;
+}
+
+export async function saveSnowflakeCredentials(creds: SnowflakeCredentials): Promise<void> {
+  await browser.storage.local.set({
+    [STORAGE_KEYS.SF_ACCOUNT_URL]: creds.accountUrl,
+    [STORAGE_KEYS.SF_PAT_TOKEN]: creds.patToken,
+    [STORAGE_KEYS.SF_WAREHOUSE]: creds.warehouse,
+  });
+}
+
+export async function getSnowflakeCredentials(): Promise<SnowflakeCredentials | undefined> {
+  const result = await browser.storage.local.get([
+    STORAGE_KEYS.SF_ACCOUNT_URL,
+    STORAGE_KEYS.SF_PAT_TOKEN,
+    STORAGE_KEYS.SF_WAREHOUSE,
+  ]);
+  const accountUrl = result[STORAGE_KEYS.SF_ACCOUNT_URL] as string | undefined;
+  const patToken = result[STORAGE_KEYS.SF_PAT_TOKEN] as string | undefined;
+  const warehouse = result[STORAGE_KEYS.SF_WAREHOUSE] as string | undefined;
+  if (!accountUrl || !patToken || !warehouse) return undefined;
+  return { accountUrl, patToken, warehouse };
 }
 
 // ---- Job Descriptions ----

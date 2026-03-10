@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { generateOutreachMessage } from '../src/scorer/messenger';
 import type { CandidateProfile } from '../src/parser/types';
+import type { CortexCredentials } from '../src/scorer/cortex';
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
+
+const MOCK_CREDS: CortexCredentials = {
+  accountUrl: 'https://test.snowflakecomputing.com',
+  patToken: 'test-pat-token',
+  warehouse: 'COMPUTE_WH',
+};
 
 const MOCK_PROFILE: CandidateProfile = {
   name: 'Jane Smith',
@@ -19,20 +26,27 @@ const MOCK_PROFILE: CandidateProfile = {
   profileUrl: 'https://www.linkedin.com/in/janesmith',
 };
 
+// Snowflake SQL API success response shape
+function sfResponse(text: string) {
+  return {
+    ok: true,
+    json: async () => ({
+      code: '090001',
+      data: [[text]],
+      resultSetMetaData: { numRows: 1 },
+    }),
+  };
+}
+
 describe('generateOutreachMessage', () => {
-  it('returns message text on successful API call', async () => {
+  it('returns message text on successful Cortex call', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          content: [{ type: 'text', text: 'Hi Jane, I noticed your work at Acme...' }],
-        }),
-      }),
+      vi.fn().mockResolvedValue(sfResponse('Hi Jane, I noticed your work at Acme...')),
     );
 
     const result = await generateOutreachMessage(
-      'test-key',
+      MOCK_CREDS,
       MOCK_PROFILE,
       'L1',
       ['TypeScript', 'React'],
@@ -48,7 +62,7 @@ describe('generateOutreachMessage', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
     const result = await generateOutreachMessage(
-      'test-key',
+      MOCK_CREDS,
       MOCK_PROFILE,
       'L2',
       ['TypeScript'],
@@ -57,7 +71,7 @@ describe('generateOutreachMessage', () => {
     );
 
     expect(result.message).toBe('');
-    expect(result.error).toBe('Network error generating message');
+    expect(result.error).toContain('Network error');
   });
 
   it('returns error on non-ok API response', async () => {
@@ -67,7 +81,7 @@ describe('generateOutreachMessage', () => {
     );
 
     const result = await generateOutreachMessage(
-      'test-key',
+      MOCK_CREDS,
       MOCK_PROFILE,
       'L3',
       [],
@@ -76,20 +90,17 @@ describe('generateOutreachMessage', () => {
     );
 
     expect(result.message).toBe('');
-    expect(result.error).toBe('Claude API error 429');
+    expect(result.error).toContain('error');
   });
 
-  it('returns error when Claude returns empty content', async () => {
+  it('returns error when Cortex returns empty content', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ content: [{ type: 'text', text: '' }] }),
-      }),
+      vi.fn().mockResolvedValue(sfResponse('')),
     );
 
     const result = await generateOutreachMessage(
-      'test-key',
+      MOCK_CREDS,
       MOCK_PROFILE,
       'L1',
       ['TypeScript'],
@@ -98,23 +109,22 @@ describe('generateOutreachMessage', () => {
     );
 
     expect(result.message).toBe('');
-    expect(result.error).toBe('Claude returned empty message');
+    expect(result.error).toContain('empty');
   });
 
-  it('sends correct model and headers in API request', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ content: [{ type: 'text', text: 'Hello' }] }),
-    });
+  it('sends request to Snowflake SQL API endpoint', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(sfResponse('Hello'));
     vi.stubGlobal('fetch', mockFetch);
 
-    await generateOutreachMessage('my-api-key', MOCK_PROFILE, 'L1', [], [], 'Role');
+    await generateOutreachMessage(MOCK_CREDS, MOCK_PROFILE, 'L1', [], [], 'Role');
 
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, opts] = mockFetch.mock.calls[0];
-    expect(url).toBe('https://api.anthropic.com/v1/messages');
-    expect(opts.headers['x-api-key']).toBe('my-api-key');
+    expect(url).toBe('https://test.snowflakecomputing.com/api/v2/statements');
+    expect(opts.headers['Authorization']).toBe('Bearer test-pat-token');
+    expect(opts.headers['X-Snowflake-Authorization-Token-Type']).toBe('PROGRAMMATIC_ACCESS_TOKEN');
     const body = JSON.parse(opts.body);
-    expect(body.model).toBe('claude-haiku-4-5-20251001');
+    expect(body.statement).toContain('SNOWFLAKE.CORTEX.COMPLETE');
+    expect(body.warehouse).toBe('COMPUTE_WH');
   });
 });

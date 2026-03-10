@@ -13,9 +13,11 @@ export default defineConfig({
       'scripting',
       'downloads',
       'webNavigation',
+      'declarativeNetRequest',
     ],
     host_permissions: [
       'https://www.linkedin.com/*',
+      'https://*.snowflakecomputing.com/*',
       'https://api.anthropic.com/*',
     ],
     options_ui: {

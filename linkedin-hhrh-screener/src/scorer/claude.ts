@@ -1,9 +1,11 @@
 // src/scorer/claude.ts
-// Claude API refinement call for ambiguous/synonym skills.
-// Uses direct fetch (no @anthropic-ai/sdk) — safe for service worker context.
+// AI refinement call for ambiguous/synonym skills.
+// Supports Snowflake Cortex (default) and direct Anthropic Claude API (Developer mode).
 
 import type { CandidateProfile } from '../parser/types';
 import type { Skill } from '../storage/schema';
+import { cortexComplete, type CortexCredentials } from './cortex';
+import { anthropicComplete } from './anthropic';
 
 /**
  * Extracts a JSON object string from text that may be wrapped in markdown code fences.
@@ -17,7 +19,7 @@ function extractJson(text: string): string {
 }
 
 /**
- * Builds the Claude prompt including candidate headline, about, experience titles,
+ * Builds the prompt including candidate headline, about, experience titles,
  * and the list of unmatched skills to evaluate.
  */
 function buildPrompt(profile: CandidateProfile, unmatchedSkills: Skill[]): string {
@@ -41,12 +43,41 @@ function buildPrompt(profile: CandidateProfile, unmatchedSkills: Skill[]): strin
 }
 
 /**
- * Calls the Claude Haiku API to resolve ambiguous skill synonyms.
- * Skips the API call entirely when unmatchedSkills is empty.
+ * Calls Snowflake Cortex COMPLETE to resolve ambiguous skill synonyms.
+ * Skips the call entirely when unmatchedSkills is empty.
  * Returns graceful fallback on JSON parse failure or API errors — never throws.
- * On 401: returns { additionalMatches: [], rationale: 'Claude API key invalid...', claudeError: '401' }
  */
 export async function refineWithClaude(
+  creds: CortexCredentials,
+  profile: CandidateProfile,
+  unmatchedSkills: Skill[],
+): Promise<{ additionalMatches: string[]; rationale: string; claudeError?: string }> {
+  if (unmatchedSkills.length === 0) {
+    return { additionalMatches: [], rationale: '' };
+  }
+
+  const prompt = buildPrompt(profile, unmatchedSkills);
+  const result = await cortexComplete(creds, prompt);
+
+  if (result.error) {
+    if (result.error.includes('auth')) {
+      return { additionalMatches: [], rationale: '', claudeError: '401' };
+    }
+    if (result.error.includes('Network')) {
+      return { additionalMatches: [], rationale: '', claudeError: 'network' };
+    }
+    return { additionalMatches: [], rationale: '', claudeError: result.error };
+  }
+
+  return parseRefinementResponse(result.text);
+}
+
+/**
+ * Calls the Anthropic Claude API directly (Developer mode).
+ * Skips the call entirely when unmatchedSkills is empty.
+ * Returns graceful fallback on JSON parse failure or API errors — never throws.
+ */
+export async function refineWithAnthropicApi(
   apiKey: string,
   profile: CandidateProfile,
   unmatchedSkills: Skill[],
@@ -56,43 +87,22 @@ export async function refineWithClaude(
   }
 
   const prompt = buildPrompt(profile, unmatchedSkills);
+  const result = await anthropicComplete(apiKey, prompt);
 
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: AbortSignal.timeout(25_000),
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-  } catch {
-    // Network error or timeout — degrade gracefully
-    return { additionalMatches: [], rationale: '', claudeError: 'network' };
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      return {
-        additionalMatches: [],
-        rationale: '',
-        claudeError: '401',
-      };
+  if (result.error) {
+    if (result.error === 'auth') {
+      return { additionalMatches: [], rationale: '', claudeError: '401' };
     }
-    // Other API errors (400, 404, 429, 500) — degrade gracefully
-    return { additionalMatches: [], rationale: '', claudeError: String(response.status) };
+    if (result.error.includes('Network')) {
+      return { additionalMatches: [], rationale: '', claudeError: 'network' };
+    }
+    return { additionalMatches: [], rationale: '', claudeError: result.error };
   }
 
-  const data = await response.json() as { content: Array<{ type: string; text: string }> };
-  const text = data.content[0]?.text ?? '{}';
+  return parseRefinementResponse(result.text);
+}
 
+function parseRefinementResponse(text: string): { additionalMatches: string[]; rationale: string } {
   try {
     const parsed = JSON.parse(extractJson(text)) as {
       additionalMatches?: string[];
