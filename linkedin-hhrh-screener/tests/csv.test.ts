@@ -59,6 +59,13 @@ describe('candidatesToCsv', () => {
     expect(fields[8]).toBe('');
   });
 
+  it('Outreach Message Sent is empty when messageSentText is undefined', () => {
+    const csv = candidatesToCsv([makeCandidate()]);
+    const fields = csv.split('\n')[1].split(',');
+    // Column index 9 is Outreach Message Sent
+    expect(fields[9]).toBe('');
+  });
+
   it('includes sent message text', () => {
     const csv = candidatesToCsv([
       makeCandidate({ messageSentText: 'Hello from recruiter' }),
