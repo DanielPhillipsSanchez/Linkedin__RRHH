@@ -17,6 +17,7 @@ Extension de navegador para equipos de Recursos Humanos que permite evaluar cand
 9. [Estructura del proyecto](#estructura-del-proyecto)
 10. [Desarrollo local](#desarrollo-local)
 11. [Preguntas frecuentes](#preguntas-frecuentes)
+12. [Instrucciones de prueba manual](#instrucciones-de-prueba-manual)
 
 ---
 
@@ -309,6 +310,89 @@ La extension esta disenada para funcionar en Safari via Safari Web Extension (Xc
 - **Sin scraping masivo**: la extension lee un perfil a la vez, solo cuando el reclutador navega a el
 - **Expiracion automatica**: los registros de candidatos expiran a los 90 dias
 - **Revision obligatoria**: ningun mensaje se envia sin la revision y aprobacion explicita del reclutador
+
+---
+
+## Instrucciones de prueba manual
+
+Sigue estos pasos en orden para verificar que la extension funciona correctamente de extremo a extremo.
+
+### Paso 1: Compilar y cargar la extension
+
+```bash
+cd ~/Documents/Linkedin__RRHH/linkedin-hhrh-screener
+pnpm wxt build
+```
+
+1. Abre `chrome://extensions/`
+2. Activa **Modo de desarrollador** (toggle arriba a la derecha)
+3. Clic en **"Load unpacked"** → selecciona la carpeta `.output/chrome-mv3/`
+4. **Verifica**: la extension aparece sin errores (sin boton rojo de "Errors")
+
+### Paso 2: Configurar Settings
+
+1. Clic en el icono de la extension → clic en **"Settings"**
+2. **API Key**: pega tu clave de Claude → clic "Save & Validate" → debe mostrar checkmark verde
+3. **Crear JD**: titulo = "Test Engineer", texto = cualquier descripcion
+4. **Agregar skills**: agrega 3-4 habilidades (ej: "Python" mandatory, "React" mandatory, "Docker" nice-to-have)
+5. **Seleccionar JD activa**: marca el radio button de la JD que creaste
+
+### Paso 3: Evaluar un candidato
+
+1. Navega a cualquier perfil publico de LinkedIn (ej: `linkedin.com/in/alguien`)
+2. Espera 2 segundos
+3. Clic en el icono de la extension → clic **"Evaluate"**
+4. **Verificar**:
+   - [ ] Se muestra un **nivel** (Layer 1/2/3 o Rejected) con color
+   - [ ] Se muestra el **porcentaje** de coincidencia
+   - [ ] Se muestra lista de **Matched skills**
+   - [ ] Se muestra lista de **Missing skills**
+   - [ ] Se muestra la **justificacion** de Claude (texto en italica)
+   - [ ] El candidato aparece en **"Recent Candidates"** al fondo del popup
+
+### Paso 4: Generar mensaje de contacto
+
+*(Solo si el candidato NO fue Rejected)*
+
+1. Debe aparecer la seccion **"Outreach Message"** debajo del resultado
+2. Clic **"Generate Message"** → esperar 3-5 segundos
+3. **Verificar**:
+   - [ ] Aparece un mensaje personalizado en el textarea
+   - [ ] El mensaje menciona el nombre del candidato
+   - [ ] El tono corresponde al nivel (entusiasta para L1, exploratorio para L2, futuro para L3)
+4. **Editar**: modifica el texto en el textarea (debe ser editable)
+5. Clic **"Copy"** → pegar en un editor de texto → confirmar que se copio correctamente
+6. Clic **"Open LinkedIn Message"** → debe abrir nueva pestaña en LinkedIn messaging
+7. Clic **"Mark as Sent"** → debe mostrar "Message marked as sent" en verde
+
+### Paso 5: Navegar a otro perfil (deteccion SPA)
+
+1. Sin cerrar la pestaña, navega a un **segundo perfil** de LinkedIn desde la barra de busqueda o un enlace
+2. Espera 2 segundos
+3. Clic en el icono → **"Evaluate"** de nuevo
+4. **Verificar**:
+   - [ ] Los resultados son **diferentes** al candidato anterior
+   - [ ] El nombre del nuevo candidato aparece correctamente
+   - [ ] Ahora hay **2 candidatos** en "Recent Candidates"
+
+### Paso 6: Exportar CSV
+
+1. En el popup, clic **"Export CSV"**
+2. **Verificar**:
+   - [ ] Se descarga un archivo `hhrh-candidates-YYYY-MM-DD.csv`
+   - [ ] Abrirlo en Excel/Google Sheets — debe tener las columnas: Name, Title, LinkedIn URL, Tier, Match Score, Matched Skills, Missing Skills, Evaluation Date, Contact After, Outreach Message Sent
+   - [ ] Los datos corresponden a los candidatos evaluados
+   - [ ] Si evaluaste un candidato L3, la columna "Contact After" tiene fecha (7 dias despues)
+   - [ ] Si marcaste un mensaje como enviado, el texto aparece en la ultima columna
+
+### Paso 7: Verificar errores controlados
+
+1. Ve a Settings → borra la API key → guarda
+2. Evalua un candidato → debe mostrar: **"No API key — please add your Claude API key in Options"**
+3. Re-agrega la key → borra la JD activa
+4. Evalua → debe mostrar: **"No active JD"**
+
+> Si todos los pasos pasan correctamente, la extension esta validada y lista para uso.
 
 ---
 
