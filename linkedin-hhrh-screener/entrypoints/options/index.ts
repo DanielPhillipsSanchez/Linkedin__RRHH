@@ -160,27 +160,39 @@ async function renderActiveJdSelector(): Promise<void> {
 
 // ---- Excel JD Import ----
 
-// Column name aliases (case-insensitive) → canonical field
+// Maps any column name variant → canonical field key
 const COL_ALIASES: Record<string, string> = {
-  título: 'title', titulo: 'title', title: 'title', 'job title': 'title', puesto: 'title',
-  descripción: 'description', descripcion: 'description', description: 'description', 'job description': 'description', oferta: 'description',
-  habilidades: 'skills', skills: 'skills', competencias: 'skills',
-  experiencia: 'experience', experience: 'experience',
-  idiomas: 'languages', languages: 'languages',
-  'lenguajes técnicos': 'tech', 'lenguajes tecnicos': 'tech', 'technical languages': 'tech', tecnologías: 'tech', tecnologias: 'tech', tech: 'tech',
+  // Title
+  position_title: 'title', 'job title': 'title', título: 'title', titulo: 'title', title: 'title', puesto: 'title',
+  // Seniority (combined into title)
+  seniority: 'seniority', senioridad: 'seniority',
+  // Description
+  job_description_es: 'description', job_description: 'description', descripción: 'description',
+  descripcion: 'description', description: 'description', oferta: 'description',
+  // Primary skills → mandatory
+  primary_skills: 'primary_skills', habilidades_primarias: 'primary_skills',
+  habilidades: 'primary_skills', skills: 'primary_skills', competencias: 'primary_skills',
+  // Preferred skills → nice-to-have
+  preferred_skills: 'preferred_skills', habilidades_preferidas: 'preferred_skills',
+  // Tools → nice-to-have
+  tools: 'tools', herramientas: 'tools',
+  // Languages
+  required_languages: 'languages', idiomas: 'languages', languages: 'languages',
+  // Experience years (informational only, added to rawText)
+  years_experience_min: 'experience', experiencia: 'experience', experience: 'experience',
 };
 
 function normalizeColName(name: string): string {
-  return COL_ALIASES[name.trim().toLowerCase()] ?? 'other';
+  // Strip BOM character that Excel sometimes adds to first column
+  return COL_ALIASES[name.trim().toLowerCase().replace(/^\uFEFF/, '')] ?? 'other';
 }
 
-function parseSkillsFromText(raw: string): Skill[] {
-  // Split by comma, semicolon, or newline; trim; deduplicate
+function splitSkills(raw: string, weight: Skill['weight']): Skill[] {
   return raw
     .split(/[,;\n]+/)
     .map(s => s.trim())
     .filter(s => s.length > 0)
-    .map(text => ({ text, weight: 'mandatory' as Skill['weight'] }));
+    .map(text => ({ text, weight }));
 }
 
 async function handleExcelImport(file: File): Promise<void> {
@@ -198,51 +210,58 @@ async function handleExcelImport(file: File): Promise<void> {
       return;
     }
 
+    let imported = 0;
     let lastJdId: string | null = null;
 
     for (const row of rows) {
-      const fields: Record<string, string> = {};
+      const f: Record<string, string> = {};
       for (const [key, value] of Object.entries(row)) {
         const canonical = normalizeColName(key);
         if (canonical !== 'other') {
-          fields[canonical] = String(value).trim();
+          f[canonical] = String(value).trim();
         }
       }
 
-      const title = fields['title'] || file.name.replace(/\.(xlsx|xls)$/i, '');
-      if (!title) continue;
+      // Build title: "Seniority Position Title" when both present
+      const baseTitle = f['title'] || file.name.replace(/\.(xlsx|xls)$/i, '');
+      if (!baseTitle) continue;
+      const title = f['seniority'] ? `${f['seniority']} ${baseTitle}` : baseTitle;
 
-      // Build rawText from all descriptive fields
+      // Skills: primary → mandatory, preferred + tools → nice-to-have
+      const skills: Skill[] = [
+        ...splitSkills(f['primary_skills'] ?? '', 'mandatory'),
+        ...splitSkills(f['preferred_skills'] ?? '', 'nice-to-have'),
+        ...splitSkills(f['tools'] ?? '', 'nice-to-have'),
+      ];
+
+      // rawText: use job description if present, otherwise summarise fields
       const parts: string[] = [];
-      if (fields['description']) parts.push(fields['description']);
-      if (fields['experience']) parts.push(`Experiencia requerida: ${fields['experience']}`);
-      if (fields['languages']) parts.push(`Idiomas: ${fields['languages']}`);
-      if (fields['tech']) parts.push(`Lenguajes técnicos: ${fields['tech']}`);
-      if (fields['skills']) parts.push(`Habilidades: ${fields['skills']}`);
-      const rawText = parts.join('\n\n') || Object.values(row).join('\n');
-
-      // Parse skills from skills + tech + languages columns
-      const allSkillText = [fields['skills'], fields['tech'], fields['languages']]
-        .filter(Boolean)
-        .join(', ');
-      const skills = parseSkillsFromText(allSkillText);
+      if (f['description']) parts.push(f['description']);
+      else {
+        if (f['primary_skills']) parts.push(`Habilidades requeridas: ${f['primary_skills']}`);
+        if (f['preferred_skills']) parts.push(`Habilidades valoradas: ${f['preferred_skills']}`);
+        if (f['tools']) parts.push(`Herramientas: ${f['tools']}`);
+        if (f['experience']) parts.push(`Experiencia mínima: ${f['experience']} años`);
+        if (f['languages']) parts.push(`Idiomas: ${f['languages']}`);
+      }
+      const rawText = parts.join('\n\n');
 
       const jdId = crypto.randomUUID();
-      const jd: JobDescription = {
+      await saveJd({
         id: jdId,
         title,
         rawText,
         skills,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
-      await saveJd(jd);
+      });
       lastJdId = jdId;
+      imported++;
     }
 
     if (lastJdId) {
       await setActiveJdId(lastJdId);
-      statusEl.textContent = 'Oferta importada y activada.';
+      statusEl.textContent = `${imported} oferta(s) importada(s). Última activada.`;
     } else {
       statusEl.textContent = 'No se encontraron filas válidas en el archivo.';
     }

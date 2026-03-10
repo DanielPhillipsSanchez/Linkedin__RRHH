@@ -2,43 +2,35 @@ import type { CandidateProfile } from '../parser/types';
 import type { Tier } from './tiers';
 import { anthropicComplete } from './anthropic';
 
-const TONE_MAP: Record<Exclude<Tier, 'rejected'>, string> = {
-  L1: 'El candidato encaja muy bien. Muestra interés directo en hablar con él sobre la posición.',
-  L2: 'El candidato tiene un perfil interesante. Pregúntale si estaría abierto a una conversación informal sobre la posición.',
-  L3: 'El candidato no es el perfil ideal ahora mismo. Déjale la puerta abierta para más adelante y menciona que le escribirás en unos días.',
+const TIER_CONTEXT: Record<Exclude<Tier, 'rejected'>, string> = {
+  L1: 'Es un candidato muy bueno. Proponle hablar pronto.',
+  L2: 'El perfil es interesante pero no perfecto. Pregúntale si estaría abierto a una charla.',
+  L3: 'No es el momento ideal. Déjale la puerta abierta y dile que le escribirás en unos días.',
 };
 
 function buildMessagePrompt(
   profile: CandidateProfile,
   tier: Exclude<Tier, 'rejected'>,
   matchedSkills: string[],
-  missingSkills: string[],
   jdTitle: string,
 ): string {
-  const toneInstruction = TONE_MAP[tier];
-  const titles = profile.experience.map((e) => `${e.title} en ${e.company}`).join(', ');
   const firstName = profile.name.split(' ')[0];
+  const lastJob = profile.experience[0]
+    ? `${profile.experience[0].title} en ${profile.experience[0].company}`
+    : profile.headline;
 
-  return `Escribe un mensaje de LinkedIn de un recruiter a un candidato en español.
+  return `Escribe un mensaje corto de LinkedIn de un recruiter a ${firstName}.
 
-Instrucción de tono: ${toneInstruction}
+Contexto: ${TIER_CONTEXT[tier]}
+Su trabajo actual: ${lastJob}
+Puesto que buscamos: ${jdTitle}
+Habilidades que coinciden: ${matchedSkills.slice(0, 4).join(', ') || 'varias'}
 
-Datos del candidato:
-- Nombre: ${firstName}
-- Experiencia: ${titles || 'no disponible'}
-- Puesto buscado: ${jdTitle}
-- Habilidades que tiene: ${matchedSkills.join(', ') || 'ninguna identificada'}
-- Habilidades que le faltan: ${missingSkills.join(', ') || 'ninguna'}
+Cómo debe sonar: como un mensaje de WhatsApp entre conocidos profesionales. Directo, sin rodeos, sin halagos exagerados. Máximo 3 frases.
 
-Reglas:
-- Escríbelo como lo haría una persona real, no un sistema de IA
-- Usa el nombre de pila del candidato
-- Menciona algo concreto de su experiencia
-- Frases cortas y directas, sin adornos
-- Sin guiones largos, sin puntos suspensivos, sin signos de exclamación múltiples
-- Sin palabras como: "encantado", "apasionante", "tremenda", "increíble", "oportunidad única", "perfil ideal"
-- Máximo 150 palabras
-- Solo el texto del mensaje, sin asunto ni firma`;
+No uses: signos de exclamación, puntos suspensivos, "espero que", "me permito", "adjunto", "no dudes", "encantado", "tremenda", ni frases que suenen a plantilla.
+
+Solo el texto del mensaje.`;
 }
 
 export async function generateOutreachMessage(
@@ -49,7 +41,7 @@ export async function generateOutreachMessage(
   missingSkills: string[],
   jdTitle: string,
 ): Promise<{ message: string; error?: string }> {
-  const prompt = buildMessagePrompt(profile, tier, matchedSkills, missingSkills, jdTitle);
+  const prompt = buildMessagePrompt(profile, tier, matchedSkills, jdTitle);
   const result = await anthropicComplete(apiKey, prompt);
 
   if (result.error) {
