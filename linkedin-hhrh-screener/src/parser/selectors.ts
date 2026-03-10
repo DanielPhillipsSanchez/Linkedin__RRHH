@@ -8,18 +8,21 @@
  * innerText rather than fine-grained CSS selectors.
  */
 
-export const SECTION_HEADINGS: Record<string, string> = {
-  skills: 'Skills',
-  experience: 'Experience',
-  education: 'Education',
-  about: 'About',
+// Each key maps to possible headings in supported languages (English, Spanish)
+export const SECTION_HEADINGS: Record<string, string[]> = {
+  skills:     ['Skills', 'Aptitudes', 'Habilidades'],
+  experience: ['Experience', 'Experiencia'],
+  education:  ['Education', 'Educación'],
+  about:      ['About', 'Acerca de', 'Sobre mí', 'Sobre'],
 };
 
-export function findSectionByHeading(doc: Document, heading: string): Element | null {
+export function findSectionByHeading(doc: Document, headings: string | string[]): Element | null {
+  const candidates = Array.isArray(headings) ? headings : [headings];
   const sections = doc.querySelectorAll('section');
   for (let i = 0; i < sections.length; i++) {
     const h2 = sections[i].querySelector('h2');
-    if (h2 && h2.textContent?.trim() === heading) {
+    const text = h2?.textContent?.trim() ?? '';
+    if (candidates.includes(text)) {
       return sections[i];
     }
   }

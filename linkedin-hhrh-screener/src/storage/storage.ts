@@ -15,9 +15,18 @@ export async function saveAnthropicApiKey(key: string): Promise<void> {
 }
 
 export async function getAnthropicApiKey(): Promise<string | undefined> {
+  // Build-time key takes priority (set in .env as VITE_ANTHROPIC_API_KEY)
+  const builtInKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (builtInKey) return builtInKey;
+
   const result = await browser.storage.local.get(STORAGE_KEYS.ANTHROPIC_API_KEY);
   const key = result[STORAGE_KEYS.ANTHROPIC_API_KEY] as string | undefined;
-  return key || undefined; // treat empty string as not set
+  return key || undefined;
+}
+
+/** True when the API key is baked in at build time and no manual entry is needed. */
+export function isApiKeyBuiltIn(): boolean {
+  return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
 }
 
 // ---- Job Descriptions ----

@@ -57,7 +57,22 @@ export function computeScore(jdSkills: Skill[], matchedSkillTexts: Set<string>):
 }
 
 /**
+ * Returns true if a JD skill appears as a whole word in free-form profile text
+ * (about, headline, experience descriptions). Uses word-boundary matching.
+ */
+export function skillMatchesInText(jdSkill: string, text: string): boolean {
+  const jdNorm = normalise(jdSkill);
+  if (!jdNorm) return false;
+  const textNorm = normalise(text);
+  // Escape regex special chars and allow flexible whitespace between words
+  const escaped = jdNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`).test(textNorm);
+}
+
+/**
  * Runs the keyword pass over JD skills vs candidate skills.
+ * Falls back to searching profileText (about + headline + experience) if the
+ * skill is not found in the LinkedIn Skills section.
  *
  * Returns:
  *   matchedSkills  — JD skill text strings that matched (for display and computeScore input)
@@ -66,12 +81,13 @@ export function computeScore(jdSkills: Skill[], matchedSkillTexts: Set<string>):
 export function runKeywordPass(
   jdSkills: Skill[],
   candidateSkills: string[],
+  profileText = '',
 ): { matchedSkills: string[]; unmatchedSkills: Skill[] } {
   const matchedSkills: string[] = [];
   const unmatchedSkills: Skill[] = [];
 
   for (const skill of jdSkills) {
-    if (skillMatches(skill.text, candidateSkills)) {
+    if (skillMatches(skill.text, candidateSkills) || skillMatchesInText(skill.text, profileText)) {
       matchedSkills.push(skill.text);
     } else {
       unmatchedSkills.push(skill);

@@ -1,19 +1,18 @@
 // entrypoints/options/index.ts
-// Options page controller — Claude API key + Snowflake credentials + JD CRUD + skill editor + active JD
+// Options page controller — Anthropic API key + JD CRUD + skill editor + active JD
 
-import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveSnowflakeCredentials, saveClaudeApiKey, getClaudeApiKey } from '../../src/storage/storage';
-import { STORAGE_KEYS } from '../../src/storage/schema';
+import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn } from '../../src/storage/storage';
 import type { JobDescription, Skill } from '../../src/storage/schema';
 
-// ---- Claude API Key (Developer Mode) ----
+// ---- Anthropic API Key ----
 
 async function updateClaudeApiKeyIndicator(): Promise<void> {
   const indicator = document.getElementById('claude-api-key-indicator') as HTMLParagraphElement;
-  const key = await getClaudeApiKey();
-  indicator.textContent = key ? 'Claude API key saved (takes priority over Snowflake)' : 'No Claude API key saved';
+  const key = await getAnthropicApiKey();
+  indicator.textContent = key ? 'Anthropic API key saved' : 'No Anthropic API key saved';
 }
 
-async function handleClaudeApiKeySave(): Promise<void> {
+async function handleApiKeySave(): Promise<void> {
   const input = document.getElementById('claude-api-key-input') as HTMLInputElement;
   const status = document.getElementById('claude-api-key-status') as HTMLElement;
   const key = input.value.trim();
@@ -23,13 +22,13 @@ async function handleClaudeApiKeySave(): Promise<void> {
     return;
   }
 
-  await saveClaudeApiKey(key);
+  await saveAnthropicApiKey(key);
   status.textContent = 'Validating...';
 
-  const result = await browser.runtime.sendMessage({ type: 'VALIDATE_CLAUDE_API_KEY', apiKey: key }) as { valid: boolean; error?: string };
+  const result = await browser.runtime.sendMessage({ type: 'VALIDATE_API_KEY' }) as { valid: boolean; error?: string };
 
   if (result.valid) {
-    status.textContent = 'Claude API key validated';
+    status.textContent = 'Anthropic API key validated';
     input.value = '';
     await updateClaudeApiKeyIndicator();
   } else {
@@ -37,67 +36,11 @@ async function handleClaudeApiKeySave(): Promise<void> {
   }
 }
 
-async function handleClaudeApiKeyClear(): Promise<void> {
+async function handleApiKeyClear(): Promise<void> {
   const status = document.getElementById('claude-api-key-status') as HTMLElement;
-  await saveClaudeApiKey('');
-  status.textContent = 'Claude API key cleared';
+  await saveAnthropicApiKey('');
+  status.textContent = 'Anthropic API key cleared';
   await updateClaudeApiKeyIndicator();
-}
-
-// ---- Snowflake Credentials ----
-
-async function updateCredentialIndicator(): Promise<void> {
-  const indicator = document.getElementById('api-key-indicator') as HTMLParagraphElement;
-  const result = await browser.storage.local.get([
-    STORAGE_KEYS.SF_ACCOUNT_URL,
-    STORAGE_KEYS.SF_PAT_TOKEN,
-    STORAGE_KEYS.SF_WAREHOUSE,
-  ]);
-  const hasAll = !!(
-    result[STORAGE_KEYS.SF_ACCOUNT_URL] &&
-    result[STORAGE_KEYS.SF_PAT_TOKEN] &&
-    result[STORAGE_KEYS.SF_WAREHOUSE]
-  );
-  indicator.textContent = hasAll ? 'Snowflake credentials saved' : 'No credentials saved';
-}
-
-async function handleCredentialSave(): Promise<void> {
-  const urlInput = document.getElementById('sf-account-url-input') as HTMLInputElement;
-  const warehouseInput = document.getElementById('sf-warehouse-input') as HTMLInputElement;
-  const patInput = document.getElementById('sf-pat-input') as HTMLInputElement;
-  const status = document.getElementById('api-key-status') as HTMLElement;
-
-  let accountUrl = urlInput.value.trim();
-  const warehouse = warehouseInput.value.trim();
-  const patToken = patInput.value.trim();
-
-  if (!accountUrl || !warehouse || !patToken) {
-    status.textContent = 'All three fields are required';
-    return;
-  }
-
-  // Normalize account URL
-  if (!accountUrl.startsWith('https://')) {
-    accountUrl = `https://${accountUrl}`;
-  }
-  if (!accountUrl.includes('.snowflakecomputing.com')) {
-    accountUrl = `${accountUrl}.snowflakecomputing.com`;
-  }
-  // Remove trailing slash
-  accountUrl = accountUrl.replace(/\/+$/, '');
-
-  await saveSnowflakeCredentials({ accountUrl, patToken, warehouse });
-  status.textContent = 'Validating...';
-
-  const result = await browser.runtime.sendMessage({ type: 'VALIDATE_API_KEY' }) as { valid: boolean; error?: string };
-
-  if (result.valid) {
-    status.textContent = 'Snowflake connection validated';
-    patInput.value = '';
-    await updateCredentialIndicator();
-  } else {
-    status.textContent = `Validation failed: ${result.error ?? 'Unknown error'}`;
-  }
 }
 
 // ---- Job Descriptions ----
@@ -217,20 +160,19 @@ async function renderActiveJdSelector(): Promise<void> {
 // ---- Initialise ----
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Render initial state
-  await updateClaudeApiKeyIndicator();
-  await updateCredentialIndicator();
+  // Hide API key section when key is baked in at build time
+  if (isApiKeyBuiltIn()) {
+    const section = document.getElementById('claude-api-key-section') as HTMLElement;
+    section.innerHTML = '<h2>Claude API Key</h2><p style="color:#555; font-size:0.9rem;">API key is pre-configured.</p>';
+  } else {
+    await updateClaudeApiKeyIndicator();
+    const claudeSaveBtn = document.getElementById('claude-api-key-save-btn') as HTMLButtonElement;
+    claudeSaveBtn.addEventListener('click', () => void handleApiKeySave());
+    const claudeClearBtn = document.getElementById('claude-api-key-clear-btn') as HTMLButtonElement;
+    claudeClearBtn.addEventListener('click', () => void handleApiKeyClear());
+  }
+
   await renderJdList(); // also calls renderActiveJdSelector
-
-  // Claude API key (Developer Mode)
-  const claudeSaveBtn = document.getElementById('claude-api-key-save-btn') as HTMLButtonElement;
-  claudeSaveBtn.addEventListener('click', () => void handleClaudeApiKeySave());
-  const claudeClearBtn = document.getElementById('claude-api-key-clear-btn') as HTMLButtonElement;
-  claudeClearBtn.addEventListener('click', () => void handleClaudeApiKeyClear());
-
-  // Snowflake credentials save
-  const saveBtn = document.getElementById('api-key-save-btn') as HTMLButtonElement;
-  saveBtn.addEventListener('click', () => void handleCredentialSave());
 
   // JD add
   const addBtn = document.getElementById('jd-add-btn') as HTMLButtonElement;

@@ -1,8 +1,8 @@
 import { describe, it, beforeEach, afterEach, expect } from 'vitest';
 import { fakeBrowser } from '@webext-core/fake-browser';
 import {
-  saveApiKey,
-  getApiKey,
+  saveAnthropicApiKey,
+  getAnthropicApiKey,
   saveJd,
   getAllJds,
   deleteJd,
@@ -31,17 +31,17 @@ function makeJd(overrides: Partial<JobDescription> = {}): JobDescription {
   };
 }
 
-describe('saveApiKey', () => {
+describe('saveAnthropicApiKey', () => {
   it('writes api key to storage', async () => {
-    await saveApiKey('sk-ant-test-key');
-    const key = await getApiKey();
+    await saveAnthropicApiKey('sk-ant-test-key');
+    const key = await getAnthropicApiKey();
     expect(key).toBe('sk-ant-test-key');
   });
 
   it('overwrites existing key', async () => {
-    await saveApiKey('sk-ant-first-key');
-    await saveApiKey('sk-ant-second-key');
-    const key = await getApiKey();
+    await saveAnthropicApiKey('sk-ant-first-key');
+    await saveAnthropicApiKey('sk-ant-second-key');
+    const key = await getAnthropicApiKey();
     expect(key).toBe('sk-ant-second-key');
   });
 });

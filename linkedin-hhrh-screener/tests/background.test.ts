@@ -9,7 +9,7 @@ import {
 } from '../entrypoints/background';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord, JobDescription } from '../src/storage/schema';
-import { saveJd, setActiveJdId, getAllCandidates, saveCandidate, getCandidate, saveSnowflakeCredentials } from '../src/storage/storage';
+import { saveJd, setActiveJdId, getAllCandidates, saveCandidate, getCandidate, saveAnthropicApiKey } from '../src/storage/storage';
 
 beforeEach(() => {
   fakeBrowser.reset();
@@ -26,11 +26,7 @@ afterEach(() => {
 
 // --- Test fixtures ---
 
-const mockCreds = {
-  accountUrl: 'https://test.snowflakecomputing.com',
-  patToken: 'test-pat-token',
-  warehouse: 'COMPUTE_WH',
-};
+const MOCK_API_KEY = 'sk-ant-test-key';
 
 const mockProfile: CandidateProfile = {
   name: 'Jane Doe',
@@ -60,62 +56,48 @@ const mockJd: JobDescription = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-// Helper for Snowflake SQL API response
-function sfResponse(text: string) {
+// Helper for Anthropic Messages API response
+function anthropicResponse(text: string) {
   return {
     ok: true,
     status: 200,
-    json: () => Promise.resolve({
-      code: '090001',
-      data: [[text]],
-      resultSetMetaData: { numRows: 1 },
-    }),
+    json: () => Promise.resolve({ content: [{ type: 'text', text }] }),
   };
 }
 
 describe('validateStoredCredentials', () => {
   it('returns invalid when no credentials are stored', async () => {
     const result = await validateStoredCredentials();
-    expect(result).toEqual({ valid: false, error: 'No Snowflake credentials stored' });
+    expect(result).toEqual({ valid: false, error: 'No Anthropic API key stored' });
   });
 
-  it('returns valid result when Snowflake responds with 200', async () => {
-    await saveSnowflakeCredentials(mockCreds);
+  it('returns valid result when Anthropic responds with 200', async () => {
+    await saveAnthropicApiKey(MOCK_API_KEY);
 
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-    });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', mockFetch);
 
     const result = await validateStoredCredentials();
     expect(result).toEqual({ valid: true });
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://test.snowflakecomputing.com/api/v2/statements',
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': 'Bearer test-pat-token',
-          'X-Snowflake-Authorization-Token-Type': 'PROGRAMMATIC_ACCESS_TOKEN',
-        }),
-      }),
+      'https://api.anthropic.com/v1/messages',
+      expect.objectContaining({ method: 'POST' }),
     );
   });
 
   it('returns invalid with error when fetch returns 401', async () => {
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
 
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-    });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
     vi.stubGlobal('fetch', mockFetch);
 
     const result = await validateStoredCredentials();
-    expect(result).toEqual({ valid: false, error: 'Authentication failed — check your PAT token' });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('Invalid API key');
   });
 
   it('returns invalid with network error when fetch throws', async () => {
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
 
     const mockFetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', mockFetch);
@@ -132,16 +114,16 @@ describe('handleEvaluate', () => {
     expect(result.error).toMatch(/No profile data/);
   });
 
-  it('returns error when no Snowflake credentials are stored', async () => {
+  it('returns error when no Anthropic API key is stored', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
 
     const result = await handleEvaluate();
-    expect(result.error).toMatch(/No Snowflake credentials/);
+    expect(result.error).toMatch(/No Anthropic API key/);
   });
 
   it('returns error when no active JD is set', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
 
     const result = await handleEvaluate();
     expect(result.error).toMatch(/No active JD/);
@@ -149,7 +131,7 @@ describe('handleEvaluate', () => {
 
   it('returns error when active JD id does not match any stored JD', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
     await setActiveJdId('nonexistent-jd-id');
 
     const result = await handleEvaluate();
@@ -158,7 +140,7 @@ describe('handleEvaluate', () => {
 
   it('returns error when active JD has no skills', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
 
     const emptySkillsJd: JobDescription = { ...mockJd, id: 'empty-jd', skills: [] };
     await saveJd(emptySkillsJd);
@@ -170,13 +152,13 @@ describe('handleEvaluate', () => {
 
   it('happy path: returns score, tier, matched/missing skills, rationale and saves candidate', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
     await saveJd(mockJd);
     await setActiveJdId('test-jd-id');
 
-    // Mock Cortex response — returns no additional matches for Vue (unmatched)
-    const cortexJson = '{"additionalMatches": [], "rationale": "Good React and TypeScript match."}';
-    const mockFetch = vi.fn().mockResolvedValue(sfResponse(cortexJson));
+    // Mock Anthropic response — returns no additional matches for Vue (unmatched)
+    const claudeJson = '{"additionalMatches": [], "rationale": "Good React and TypeScript match."}';
+    const mockFetch = vi.fn().mockResolvedValue(anthropicResponse(claudeJson));
     vi.stubGlobal('fetch', mockFetch);
 
     const result = await handleEvaluate();
@@ -217,12 +199,12 @@ describe('handleEvaluate', () => {
     };
 
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
     await saveJd(l3Jd);
     await setActiveJdId('l3-jd-id');
 
-    const cortexJson = '{"additionalMatches": [], "rationale": "Partial Vue match."}';
-    const mockFetch = vi.fn().mockResolvedValue(sfResponse(cortexJson));
+    const claudeJson = '{"additionalMatches": [], "rationale": "Partial Vue match."}';
+    const mockFetch = vi.fn().mockResolvedValue(anthropicResponse(claudeJson));
     vi.stubGlobal('fetch', mockFetch);
 
     const result = await handleEvaluate();
@@ -244,12 +226,12 @@ describe('handleEvaluate', () => {
 
   it('non-L3 candidate does not have contactAfter', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
-    await saveSnowflakeCredentials(mockCreds);
+    await saveAnthropicApiKey(MOCK_API_KEY);
     await saveJd(mockJd);
     await setActiveJdId('test-jd-id');
 
-    const cortexJson = '{"additionalMatches": [], "rationale": "Great match."}';
-    const mockFetch = vi.fn().mockResolvedValue(sfResponse(cortexJson));
+    const claudeJson = '{"additionalMatches": [], "rationale": "Great match."}';
+    const mockFetch = vi.fn().mockResolvedValue(anthropicResponse(claudeJson));
     vi.stubGlobal('fetch', mockFetch);
 
     const result = await handleEvaluate();
@@ -293,28 +275,28 @@ describe('handleGenerateMessage', () => {
     expect(result.error).toBe('No outreach message for rejected candidates');
   });
 
-  it('returns error when no Snowflake credentials are stored', async () => {
+  it('returns error when no Anthropic API key is stored', async () => {
     const candidate = baseCandidateRecord();
     await saveCandidate(candidate);
 
     const result = await handleGenerateMessage(candidate.id);
     expect(result.message).toBe('');
-    expect(result.error).toContain('No Snowflake credentials');
+    expect(result.error).toContain('No Anthropic API key');
   });
 
-  it('happy path: returns message from Cortex and updates candidate outreachMessage in storage', async () => {
+  it('happy path: returns message from Claude and updates candidate outreachMessage in storage', async () => {
     const candidate = baseCandidateRecord();
     await saveCandidate(candidate);
-    await saveSnowflakeCredentials(mockCreds);
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sfResponse('Hello Jane')));
+    await saveAnthropicApiKey(MOCK_API_KEY);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicResponse('Hello Test Candidate')));
 
     const result = await handleGenerateMessage(candidate.id);
 
-    expect(result.message).toBe('Hello Jane');
+    expect(result.message).toBe('Hello Test Candidate');
     expect(result.error).toBeUndefined();
 
     const stored = await getCandidate(candidate.id);
-    expect(stored?.outreachMessage).toBe('Hello Jane');
+    expect(stored?.outreachMessage).toBe('Hello Test Candidate');
   });
 });
 

@@ -32,7 +32,8 @@ function extractAbout(doc: Document): string {
   if (!section) return '';
   const text = getElementText(section);
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  return lines.filter(l => l !== SECTION_HEADINGS.about && l !== 'Show more' && l !== 'Show less').join(' ');
+  const headingSet = new Set(SECTION_HEADINGS.about);
+  return lines.filter(l => !headingSet.has(l) && l !== 'Show more' && l !== 'Show less' && l !== 'Ver más' && l !== 'Ver menos').join(' ');
 }
 
 function cleanSkillName(raw: string): string {
@@ -48,7 +49,7 @@ function extractSkills(doc: Document): string[] {
     if (!text) continue;
     const parts = text.split(',').map(p => p.trim());
     for (const part of parts) {
-      let name = part.replace(/and \+\d+ skills?$/i, '').trim();
+      let name = part.replace(/and \+\d+ skills?$/i, '').replace(/y \+\d+ aptitudes?$/i, '').trim();
       if (!name || name.length < 2) continue;
       name = cleanSkillName(name);
       if (name && !skills.includes(name)) {
@@ -63,17 +64,16 @@ function extractSkills(doc: Document): string[] {
       const text = getElementText(section);
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
       const skipPatterns = [
-        SECTION_HEADINGS.skills,
-        'Show all',
-        'Passed LinkedIn Skill Assessment',
-        'Endorsements',
-        'endorsement',
+        ...SECTION_HEADINGS.skills,
+        'Show all', 'Ver todo',
+        'Passed LinkedIn Skill Assessment', 'Aprobó la evaluación de aptitudes de LinkedIn',
+        'Endorsements', 'Validaciones', 'endorsement', 'validación',
       ];
       for (const line of lines) {
         if (skipPatterns.some(p => line.includes(p))) continue;
         if (line.match(/^\d+$/)) continue;
         if (line.length < 2 || line.length > 80) continue;
-        if (line.includes(' at ') || line.includes(' · ')) continue;
+        if (line.includes(' at ') || line.includes(' en ') || line.includes(' · ')) continue;
         const name = cleanSkillName(line);
         if (name && !skills.includes(name)) {
           skills.push(name);
@@ -93,8 +93,9 @@ function extractExperience(doc: Document): ExperienceEntry[] {
 
   const entries: ExperienceEntry[] = [];
   let i = 0;
+  const experienceHeadings = new Set(SECTION_HEADINGS.experience);
   const filtered = lines.filter(l =>
-    l !== SECTION_HEADINGS.experience && l !== 'Show all' && !l.startsWith('Show all ')
+    !experienceHeadings.has(l) && l !== 'Show all' && !l.startsWith('Show all ') && l !== 'Ver todo' && !l.startsWith('Ver todo ')
   );
 
   while (i < filtered.length) {
@@ -129,8 +130,9 @@ function extractEducation(doc: Document): EducationEntry[] {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
   const entries: EducationEntry[] = [];
+  const educationHeadings = new Set(SECTION_HEADINGS.education);
   const filtered = lines.filter(l =>
-    l !== SECTION_HEADINGS.education && l !== 'Show all' && !l.startsWith('Show all ')
+    !educationHeadings.has(l) && l !== 'Show all' && !l.startsWith('Show all ') && l !== 'Ver todo' && !l.startsWith('Ver todo ')
   );
 
   let i = 0;

@@ -4,7 +4,6 @@ import { assignTier } from '../src/scorer/tiers';
 import { refineWithClaude } from '../src/scorer/claude';
 import type { Skill } from '../src/storage/schema';
 import type { CandidateProfile } from '../src/parser/types';
-import type { CortexCredentials } from '../src/scorer/cortex';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -137,21 +136,14 @@ const mockProfile: CandidateProfile = {
 
 const mockUnmatchedSkills: Skill[] = [{ text: 'Python', weight: 'mandatory' }];
 
-const mockCreds: CortexCredentials = {
-  accountUrl: 'https://test.snowflakecomputing.com',
-  patToken: 'test-pat-token',
-  warehouse: 'COMPUTE_WH',
-};
+const MOCK_API_KEY = 'sk-ant-test-key';
 
-// Helper to build a Snowflake SQL API success response
-function sfResponse(text: string) {
+// Helper to build an Anthropic Messages API success response
+function anthropicResponse(text: string) {
   return {
     ok: true,
-    json: async () => ({
-      code: '090001',
-      data: [[text]],
-      resultSetMetaData: { numRows: 1 },
-    }),
+    status: 200,
+    json: async () => ({ content: [{ type: 'text', text }] }),
   };
 }
 
@@ -161,33 +153,33 @@ describe('refineWithClaude', () => {
       additionalMatches: ['Python'],
       rationale: 'Candidate mentioned Python in about section.',
     });
-    const mockFetch = vi.fn().mockResolvedValue(sfResponse(jsonText));
+    const mockFetch = vi.fn().mockResolvedValue(anthropicResponse(jsonText));
     vi.stubGlobal('fetch', mockFetch);
 
-    const result = await refineWithClaude(mockCreds, mockProfile, mockUnmatchedSkills);
+    const result = await refineWithClaude(MOCK_API_KEY, mockProfile, mockUnmatchedSkills);
 
     expect(result.additionalMatches).toEqual(['Python']);
     expect(result.rationale).toBe('Candidate mentioned Python in about section.');
   });
 
-  it('parses correctly when Cortex wraps response in markdown code fences', async () => {
+  it('parses correctly when Claude wraps response in markdown code fences', async () => {
     const text = '```json\n{"additionalMatches":["Python"],"rationale":"Inferred from about section."}\n```';
-    const mockFetch = vi.fn().mockResolvedValue(sfResponse(text));
+    const mockFetch = vi.fn().mockResolvedValue(anthropicResponse(text));
     vi.stubGlobal('fetch', mockFetch);
 
-    const result = await refineWithClaude(mockCreds, mockProfile, mockUnmatchedSkills);
+    const result = await refineWithClaude(MOCK_API_KEY, mockProfile, mockUnmatchedSkills);
 
     expect(result.additionalMatches).toEqual(['Python']);
     expect(result.rationale).toBe('Inferred from about section.');
   });
 
-  it('returns empty additionalMatches and empty rationale when Cortex returns malformed JSON', async () => {
+  it('returns empty additionalMatches and empty rationale when Claude returns malformed JSON', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
-      sfResponse('Sorry, I cannot process this request right now.'),
+      anthropicResponse('Sorry, I cannot process this request right now.'),
     );
     vi.stubGlobal('fetch', mockFetch);
 
-    const result = await refineWithClaude(mockCreds, mockProfile, mockUnmatchedSkills);
+    const result = await refineWithClaude(MOCK_API_KEY, mockProfile, mockUnmatchedSkills);
 
     expect(result.additionalMatches).toEqual([]);
     expect(result.rationale).toBe('');

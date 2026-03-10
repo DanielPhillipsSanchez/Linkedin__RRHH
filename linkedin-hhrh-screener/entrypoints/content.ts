@@ -6,6 +6,32 @@ const profilePattern = new MatchPattern('https://www.linkedin.com/in/*');
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+function profileIsUsable(profile: ReturnType<typeof parseProfile>['profile']): boolean {
+  return !!(profile.about || profile.headline || profile.experience.length > 0 || profile.skills.length > 0);
+}
+
+/**
+ * Parse and send profile. If key sections are empty (lazy-load not done yet),
+ * retry up to maxRetries times with increasing delays.
+ */
+function extractAndSend(retryDelays = [1500, 3000]): void {
+  const { profile, health } = parseProfile(document, location.href);
+  console.log('[HHRH] parsed name:', profile.name, '| usable:', profileIsUsable(profile), '| about:', profile.about.slice(0, 60) || '(empty)', '| skills:', profile.skills.length);
+
+  if (!profileIsUsable(profile) && retryDelays.length > 0) {
+    const [next, ...rest] = retryDelays;
+    console.log(`[HHRH] sections empty — retrying in ${next}ms`);
+    setTimeout(() => extractAndSend(rest), next);
+    return;
+  }
+
+  console.log('[HHRH] sending profile — experience:', profile.experience.length, 'skills:', profile.skills.length);
+  const msg: ProfileParsedMessage = { type: 'PROFILE_PARSED', profile, health };
+  browser.runtime.sendMessage(msg).catch((err) => {
+    console.warn('[HHRH] sendMessage failed:', err);
+  });
+}
+
 /**
  * Wait for the page title to change (SPA nav) or settle (initial load), then extract.
  * @param waitForTitleChange - true on SPA navigation (title still shows previous page)
@@ -13,7 +39,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 function waitForProfileAndExtract(waitForTitleChange = false): void {
   if (debounceTimer !== null) clearTimeout(debounceTimer);
 
-  const capturedTitle = document.title; // snapshot before navigation
+  const capturedTitle = document.title;
   let observer: MutationObserver | null = null;
   let settled = false;
 
@@ -24,22 +50,16 @@ function waitForProfileAndExtract(waitForTitleChange = false): void {
     observer = null;
     if (debounceTimer !== null) { clearTimeout(debounceTimer); debounceTimer = null; }
     console.log('[HHRH] extracting — title:', document.title, 'url:', location.href);
-    const { profile, health } = parseProfile(document, location.href);
-    console.log('[HHRH] parsed name:', profile.name, '| health.ok:', health.ok);
-    const msg: ProfileParsedMessage = { type: 'PROFILE_PARSED', profile, health };
-    browser.runtime.sendMessage(msg).catch((err) => {
-      console.warn('[HHRH] sendMessage failed:', err);
-    });
+    extractAndSend();
   }
 
   if (!waitForTitleChange) {
-    console.log('[HHRH] initial load — title:', document.title, 'scheduling extract in 500ms');
-    debounceTimer = setTimeout(extract, 500);
+    console.log('[HHRH] initial load — scheduling extract in 1500ms');
+    debounceTimer = setTimeout(extract, 1500);
     return;
   }
 
   console.log('[HHRH] SPA nav — captured title:', capturedTitle, '— waiting for change');
-  // SPA navigation: wait for title to change from the captured snapshot, then extract
   observer = new MutationObserver(() => {
     if (document.title !== capturedTitle) {
       const name = document.title.split('|')[0].trim();
@@ -47,14 +67,14 @@ function waitForProfileAndExtract(waitForTitleChange = false): void {
       if (name && !name.toLowerCase().includes('linkedin')) {
         observer?.disconnect();
         observer = null;
-        debounceTimer = setTimeout(extract, 300);
+        debounceTimer = setTimeout(extract, 1000);
       }
     }
   });
   observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
 
-  // Fallback: extract after 5s regardless
-  debounceTimer = setTimeout(extract, 5000);
+  // Fallback: extract after 8s regardless
+  debounceTimer = setTimeout(extract, 8000);
 }
 
 function runExtraction(waitForTitleChange = false): void {
@@ -62,14 +82,12 @@ function runExtraction(waitForTitleChange = false): void {
 }
 
 export default defineContentScript({
-  matches: ['https://www.linkedin.com/*'], // broad — survives SPA navigation
+  matches: ['https://www.linkedin.com/*'],
   main(ctx) {
-    // Initial load: title already reflects this profile
     if (profilePattern.includes(location.href)) {
       runExtraction(false);
     }
 
-    // SPA navigation: title still shows previous page — wait for it to change
     ctx.addEventListener(window, 'wxt:locationchange', ({ newUrl }: { newUrl: string }) => {
       if (profilePattern.includes(newUrl)) {
         runExtraction(true);

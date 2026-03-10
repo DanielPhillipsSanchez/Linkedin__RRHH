@@ -1,6 +1,6 @@
 import type { CandidateProfile } from '../parser/types';
 import type { Tier } from './tiers';
-import { cortexComplete, type CortexCredentials } from './cortex';
+import { anthropicComplete } from './anthropic';
 
 const TONE_MAP: Record<Exclude<Tier, 'rejected'>, { label: string; instruction: string }> = {
   L1: {
@@ -52,7 +52,7 @@ function buildMessagePrompt(
 }
 
 export async function generateOutreachMessage(
-  creds: CortexCredentials,
+  apiKey: string,
   profile: CandidateProfile,
   tier: Exclude<Tier, 'rejected'>,
   matchedSkills: string[],
@@ -60,14 +60,14 @@ export async function generateOutreachMessage(
   jdTitle: string,
 ): Promise<{ message: string; error?: string }> {
   const prompt = buildMessagePrompt(profile, tier, matchedSkills, missingSkills, jdTitle);
-  const result = await cortexComplete(creds, prompt);
+  const result = await anthropicComplete(apiKey, prompt);
 
   if (result.error) {
     return { message: '', error: result.error };
   }
 
   if (!result.text) {
-    return { message: '', error: 'Cortex returned empty message' };
+    return { message: '', error: 'Empty response from Claude API' };
   }
 
   return { message: result.text };

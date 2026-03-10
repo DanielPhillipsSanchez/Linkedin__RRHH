@@ -155,10 +155,9 @@
     <h1>LinkedIn HHRH Screener Settings</h1>
 
     <section id="claude-api-key-section">
-      <h2>Developer Mode — Claude API Key</h2>
+      <h2>Claude API Key</h2>
       <p style="color:#555; font-size:0.9rem; margin-bottom:12px;">
-        Enter your Anthropic Claude API key to use the direct Claude API instead of Snowflake Cortex.
-        When a Claude API key is saved it takes priority over Snowflake credentials.
+        Enter your Anthropic Claude API key. Required for candidate scoring and message generation.
       </p>
       <label for="claude-api-key-input">API Key</label>
       <input
@@ -173,34 +172,6 @@
       </div>
       <span id="claude-api-key-status"></span>
       <p id="claude-api-key-indicator"></p>
-    </section>
-
-    <section id="api-key-section">
-      <h2>Snowflake Cortex Connection</h2>
-      <label for="sf-account-url-input">Account URL</label>
-      <input
-        type="text"
-        id="sf-account-url-input"
-        placeholder="https://lxb35875.snowflakecomputing.com"
-        autocomplete="off"
-      />
-      <label for="sf-warehouse-input">Warehouse</label>
-      <input
-        type="text"
-        id="sf-warehouse-input"
-        placeholder="COMPUTE_WH"
-        autocomplete="off"
-      />
-      <label for="sf-pat-input">PAT Token (Programmatic Access Token)</label>
-      <input
-        type="password"
-        id="sf-pat-input"
-        placeholder="Your Snowflake PAT token"
-        autocomplete="off"
-      />
-      <button id="api-key-save-btn">Save &amp; Validate</button>
-      <span id="api-key-status"></span>
-      <p id="api-key-indicator"></p>
     </section>
 
     <section id="active-jd-section">

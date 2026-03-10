@@ -1,4 +1,4 @@
-import { getSnowflakeCredentials, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
+import { getAnthropicApiKey, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
 import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
@@ -6,7 +6,7 @@ import { runKeywordPass, computeScore } from '../src/scorer/scorer';
 import { assignTier, TIER_LABELS } from '../src/scorer/tiers';
 import { refineWithClaude } from '../src/scorer/claude';
 import { generateOutreachMessage } from '../src/scorer/messenger';
-import { validateCortexCredentials } from '../src/scorer/cortex';
+import { validateAnthropicApiKey } from '../src/scorer/anthropic';
 
 let lastParsedProfile: { profile: CandidateProfile; health: ExtractionHealth } | null = null;
 
@@ -22,9 +22,9 @@ export function _setLastParsedProfileForTest(
 }
 
 export async function validateStoredCredentials(): Promise<{ valid: boolean; error?: string }> {
-  const creds = await getSnowflakeCredentials();
-  if (!creds) return { valid: false, error: 'No Snowflake credentials stored' };
-  return validateCortexCredentials(creds);
+  const apiKey = await getAnthropicApiKey();
+  if (!apiKey) return { valid: false, error: 'No Anthropic API key stored' };
+  return validateAnthropicApiKey(apiKey);
 }
 
 export async function handleEvaluate(): Promise<EvaluateResult> {
@@ -42,8 +42,8 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     };
   }
 
-  const creds = await getSnowflakeCredentials();
-  if (!creds) {
+  const apiKey = await getAnthropicApiKey();
+  if (!apiKey) {
     return {
       score: 0,
       tier: 'rejected',
@@ -52,7 +52,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No Snowflake credentials — please configure them in Options',
+      error: 'No Anthropic API key — please add it in Options',
     };
   }
 
@@ -99,23 +99,30 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
 
   const { profile } = stored;
 
-  // Keyword pass
-  const { matchedSkills, unmatchedSkills } = runKeywordPass(jd.skills, profile.skills);
+  // Build a full-text blob from about, headline, and experience titles for fallback matching
+  const profileText = [
+    profile.headline,
+    profile.about,
+    ...profile.experience.map((e) => `${e.title} ${e.company}`),
+  ].join(' ');
 
-  // Cortex refinement (skip if nothing unmatched)
+  // Keyword pass — checks skills section first, then falls back to full profile text
+  const { matchedSkills, unmatchedSkills } = runKeywordPass(jd.skills, profile.skills, profileText);
+
+  // Claude refinement (skip if nothing unmatched)
   let additionalMatches: string[] = [];
   let rationale = '';
-  let cortexWarning: string | undefined;
+  let claudeWarning: string | undefined;
   if (unmatchedSkills.length > 0) {
-    const refined = await refineWithClaude(creds, profile, unmatchedSkills);
+    const refined = await refineWithClaude(apiKey, profile, unmatchedSkills);
     additionalMatches = refined.additionalMatches;
     rationale = refined.rationale;
     if (refined.claudeError === '401') {
-      cortexWarning = 'Snowflake auth failed — please update credentials in Options. Score shown is keyword-only.';
+      claudeWarning = 'Claude API auth failed — please update your API key in Options. Score shown is keyword-only.';
     } else if (refined.claudeError === 'network') {
-      cortexWarning = 'Snowflake unreachable — score is keyword-only.';
+      claudeWarning = 'Claude API unreachable — score is keyword-only.';
     } else if (refined.claudeError) {
-      cortexWarning = `Cortex error: ${refined.claudeError} — score is keyword-only.`;
+      claudeWarning = `Claude API error: ${refined.claudeError} — score is keyword-only.`;
     }
   }
 
@@ -159,7 +166,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     missingSkills,
     rationale,
     candidateId: record.id,
-    ...(cortexWarning ? { warning: cortexWarning } : {}),
+    ...(claudeWarning ? { warning: claudeWarning } : {}),
   };
 }
 
@@ -169,8 +176,8 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
 
   if (candidate.tier === 'rejected') return { message: '', error: 'No outreach message for rejected candidates' };
 
-  const creds = await getSnowflakeCredentials();
-  if (!creds) return { message: '', error: 'No Snowflake credentials — please configure them in Options' };
+  const apiKey = await getAnthropicApiKey();
+  if (!apiKey) return { message: '', error: 'No Anthropic API key — please configure it in Options' };
 
   const jds = await getAllJds();
   const jd = jds.find((j) => j.id === candidate.jdId);
@@ -188,7 +195,7 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
   };
 
   const result = await generateOutreachMessage(
-    creds,
+    apiKey,
     profile,
     candidate.tier as Exclude<typeof candidate.tier, 'rejected'>,
     candidate.matchedSkills,

@@ -1,10 +1,8 @@
 // src/scorer/claude.ts
-// AI refinement call for ambiguous/synonym skills.
-// Supports Snowflake Cortex (default) and direct Anthropic Claude API (Developer mode).
+// AI refinement call for ambiguous/synonym skills using the direct Anthropic Claude API.
 
 import type { CandidateProfile } from '../parser/types';
 import type { Skill } from '../storage/schema';
-import { cortexComplete, type CortexCredentials } from './cortex';
 import { anthropicComplete } from './anthropic';
 
 /**
@@ -43,41 +41,11 @@ function buildPrompt(profile: CandidateProfile, unmatchedSkills: Skill[]): strin
 }
 
 /**
- * Calls Snowflake Cortex COMPLETE to resolve ambiguous skill synonyms.
+ * Calls the Anthropic Claude API to resolve ambiguous skill synonyms.
  * Skips the call entirely when unmatchedSkills is empty.
  * Returns graceful fallback on JSON parse failure or API errors — never throws.
  */
 export async function refineWithClaude(
-  creds: CortexCredentials,
-  profile: CandidateProfile,
-  unmatchedSkills: Skill[],
-): Promise<{ additionalMatches: string[]; rationale: string; claudeError?: string }> {
-  if (unmatchedSkills.length === 0) {
-    return { additionalMatches: [], rationale: '' };
-  }
-
-  const prompt = buildPrompt(profile, unmatchedSkills);
-  const result = await cortexComplete(creds, prompt);
-
-  if (result.error) {
-    if (result.error.includes('auth')) {
-      return { additionalMatches: [], rationale: '', claudeError: '401' };
-    }
-    if (result.error.includes('Network')) {
-      return { additionalMatches: [], rationale: '', claudeError: 'network' };
-    }
-    return { additionalMatches: [], rationale: '', claudeError: result.error };
-  }
-
-  return parseRefinementResponse(result.text);
-}
-
-/**
- * Calls the Anthropic Claude API directly (Developer mode).
- * Skips the call entirely when unmatchedSkills is empty.
- * Returns graceful fallback on JSON parse failure or API errors — never throws.
- */
-export async function refineWithAnthropicApi(
   apiKey: string,
   profile: CandidateProfile,
   unmatchedSkills: Skill[],

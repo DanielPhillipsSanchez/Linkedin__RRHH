@@ -6,5 +6,7 @@ export default defineConfig({
   test: {
     // @webext-core/fake-browser provides in-memory browser.* APIs
     setupFiles: ['./tests/setup.ts'],
+    // Clear the built-in key so tests can exercise the storage-based key path
+    env: { VITE_ANTHROPIC_API_KEY: '' },
   },
 });
