@@ -102,15 +102,18 @@ function showResult(result: EvaluateResult): void {
 
   currentCandidateId = result.candidateId;
 
+  const generateBtn = document.getElementById('generate-msg-btn') as HTMLButtonElement;
   const msgSection = document.getElementById('message-section');
-  if (msgSection && result.tier !== 'rejected') {
+  if (msgSection && result.tier !== 'rejected' && result.candidateId) {
     msgSection.hidden = false;
+    generateBtn.disabled = false;
     const textarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
     textarea.value = '';
     setMessageButtonsEnabled(false);
     document.getElementById('message-status')!.textContent = '';
   } else if (msgSection) {
     msgSection.hidden = true;
+    generateBtn.disabled = true;
   }
 }
 
