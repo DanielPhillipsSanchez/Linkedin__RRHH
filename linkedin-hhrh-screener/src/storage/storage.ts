@@ -3,7 +3,7 @@
 // All phases import from here. Never use browser.storage.local directly outside this file.
 
 import { STORAGE_KEYS } from './schema';
-import type { JobDescription } from './schema';
+import type { JobDescription, CandidateRecord } from './schema';
 
 // Storage quota constant — Chrome 113+ allows 10MB for local storage
 export const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024; // 10MB
@@ -78,4 +78,36 @@ export async function getStorageUsageBytes(): Promise<number> {
     return 0;
   }
   return browser.storage.local.getBytesInUse(null);
+}
+
+// ---- Candidates ----
+
+async function getCandidateIndex(): Promise<string[]> {
+  const result = await browser.storage.local.get(STORAGE_KEYS.CANDIDATE_INDEX);
+  return (result[STORAGE_KEYS.CANDIDATE_INDEX] as string[] | undefined) ?? [];
+}
+
+export async function saveCandidate(record: CandidateRecord): Promise<void> {
+  const ids = await getCandidateIndex();
+  if (!ids.includes(record.id)) {
+    ids.push(record.id);
+    await browser.storage.local.set({ [STORAGE_KEYS.CANDIDATE_INDEX]: ids });
+  }
+  await browser.storage.local.set({ [STORAGE_KEYS.candidate(record.id)]: record });
+}
+
+export async function getAllCandidates(): Promise<CandidateRecord[]> {
+  const ids = await getCandidateIndex();
+  if (ids.length === 0) return [];
+  const keys = ids.map((id) => STORAGE_KEYS.candidate(id));
+  const result = await browser.storage.local.get(keys);
+  const records = keys.map((k) => result[k]).filter(Boolean) as CandidateRecord[];
+  return records.sort((a, b) => b.evaluatedAt.localeCompare(a.evaluatedAt));
+}
+
+export async function deleteCandidate(id: string): Promise<void> {
+  const ids = await getCandidateIndex();
+  const updated = ids.filter((existingId) => existingId !== id);
+  await browser.storage.local.set({ [STORAGE_KEYS.CANDIDATE_INDEX]: updated });
+  await browser.storage.local.remove(STORAGE_KEYS.candidate(id));
 }
