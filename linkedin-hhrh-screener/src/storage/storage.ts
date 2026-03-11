@@ -126,3 +126,12 @@ export async function deleteCandidate(id: string): Promise<void> {
   await browser.storage.local.set({ [STORAGE_KEYS.CANDIDATE_INDEX]: updated });
   await browser.storage.local.remove(STORAGE_KEYS.candidate(id));
 }
+
+export async function clearAllCandidates(): Promise<void> {
+  const ids = await getCandidateIndex();
+  const keys = ids.map((id) => STORAGE_KEYS.candidate(id));
+  if (keys.length > 0) {
+    await browser.storage.local.remove(keys);
+  }
+  await browser.storage.local.set({ [STORAGE_KEYS.CANDIDATE_INDEX]: [] });
+}

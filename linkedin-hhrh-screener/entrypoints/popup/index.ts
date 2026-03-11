@@ -1,4 +1,4 @@
-import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates } from '../../src/storage/storage';
+import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates, clearAllCandidates } from '../../src/storage/storage';
 import type { EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../../src/shared/messages';
 import { TIER_LABELS } from '../../src/scorer/tiers';
 import { candidatesToCsv, downloadCsv } from '../../src/shared/csv';
@@ -261,6 +261,22 @@ document.getElementById('mark-sent-btn')?.addEventListener('click', async () => 
   } else {
     statusEl.textContent = result?.error ?? 'Failed to save';
     statusEl.className = 'error-message';
+  }
+});
+
+document.getElementById('clear-candidates-btn')?.addEventListener('click', async () => {
+  const confirmed = window.confirm('¿Borrar todos los candidatos? Esta acción no se puede deshacer.');
+  if (!confirmed) return;
+
+  const btn = document.getElementById('clear-candidates-btn') as HTMLButtonElement;
+  btn.disabled = true;
+  try {
+    await clearAllCandidates();
+    await renderCandidateList();
+    await renderOverdueL3();
+    await renderStorageUsage();
+  } finally {
+    btn.disabled = false;
   }
 });
 

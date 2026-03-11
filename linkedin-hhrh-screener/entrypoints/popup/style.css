@@ -248,6 +248,12 @@ header a:hover {
 }
 
 /* Export section */
+#export-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 #export-csv-btn {
   background: #f3f4f6;
   color: #374151;
@@ -266,6 +272,28 @@ header a:hover {
 }
 
 #export-csv-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#clear-candidates-btn {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+#clear-candidates-btn:hover:not(:disabled) {
+  background: #ffe4e6;
+}
+
+#clear-candidates-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
