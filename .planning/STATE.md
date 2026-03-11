@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 05-02-PLAN.md — SCHED-04 popup overdue section
-last_updated: "2026-03-11T14:03:27.298Z"
+stopped_at: Completed 05-01-PLAN.md — SCHED-01/02/03 alarm scheduling and badge refresh
+last_updated: "2026-03-11T14:07:32.582Z"
 last_activity: 2026-03-06 — Roadmap created, all 41 v1 requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 14
 ---
 
@@ -68,6 +68,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 04-output-layer P04 | 5 | 2 tasks | 8 files |
 | Phase 04-output-layer P05 | 10 | 2 tasks | 1 files |
 | Phase 05-scheduling-and-notifications P02 | 2 | 2 tasks | 2 files |
+| Phase 05-scheduling-and-notifications P01 | 6 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,8 @@ Recent decisions affecting current work:
 - [Phase 04-output-layer]: [04-05]: Human recruiter approved all 7 verification steps — MSG-01 through MSG-06 and CSV-01 through CSV-05 confirmed working end-to-end with Anthropic Claude API key
 - [Phase 05-02]: renderOverdueL3() placed immediately before showResult() in index.ts, after renderCandidateList() definition
 - [Phase 05-02]: No new imports needed — getAllCandidates already imported from storage module
+- [Phase 05-01]: handleAlarm exported as named function: defineBackground callback is NOT executed on import in Vitest (returns { main: fn } without calling fn), so alarm handler must be exported for direct unit testability
+- [Phase 05-01]: Global browser.action mocks in beforeEach: handleEvaluate and handleSaveMessage now call refreshBadge() internally; global mock prevents 'not implemented' errors in existing tests without modifying each test
 
 ### Pending Todos
 
@@ -138,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T14:03:27.296Z
-Stopped at: Completed 05-02-PLAN.md — SCHED-04 popup overdue section
+Last session: 2026-03-11T14:07:32.580Z
+Stopped at: Completed 05-01-PLAN.md — SCHED-01/02/03 alarm scheduling and badge refresh
 Resume file: None
