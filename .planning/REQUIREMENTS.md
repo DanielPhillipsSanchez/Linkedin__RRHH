@@ -62,7 +62,7 @@
 - [ ] **SCHED-01**: When a Layer 3 candidate is evaluated, a `chrome.alarms` entry is created to fire 7 days later
 - [ ] **SCHED-02**: When the alarm fires, a browser system notification is shown to remind the recruiter to contact the Layer 3 candidate
 - [ ] **SCHED-03**: The extension icon badge count reflects the number of Layer 3 candidates whose 7-day window has passed and have not yet been contacted
-- [ ] **SCHED-04**: The extension popup shows a list of Layer 3 candidates whose contact window has opened (7+ days since evaluation)
+- [x] **SCHED-04**: The extension popup shows a list of Layer 3 candidates whose contact window has opened (7+ days since evaluation)
 
 ### Cross-Browser
 
