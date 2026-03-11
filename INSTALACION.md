@@ -93,16 +93,23 @@ Ahora el icono de la extension quedara visible en tu barra de Chrome para usarlo
 
 ---
 
-## Paso 6 — Configura tu clave de acceso (API Key)
+## Paso 6 — Agrega tu clave de acceso (API Key)
 
-La extension usa inteligencia artificial para evaluar candidatos. Para eso necesita una clave de acceso personal.
+> Este paso solo se hace **una vez**. Despues de guardarlo, la extension lo recordara siempre.
 
-1. Haz clic en el icono de la extension en la barra de Chrome.
-2. Haz clic en el enlace **"Settings"** que aparece en la esquina superior derecha del popup.
-3. Se abrira la pagina de configuracion.
-4. En el campo **"API Key"**, pega la clave que te entrego tu equipo o administrador.
-5. Haz clic en **"Save & Validate"**.
-6. Si la clave es correcta, aparecera un mensaje en verde confirmando que esta activa.
+La extension usa inteligencia artificial (Claude AI) para evaluar candidatos. Para que funcione, necesitas agregarle una clave de acceso. Tu administrador o encargado de equipo te la proporcionara.
+
+Sigue estos pasos:
+
+1. Haz clic en el icono de la extension en la barra de Chrome (el que fijaste en el Paso 5).
+2. Se abrira una ventana pequena. En la esquina superior derecha de esa ventana, haz clic en el enlace que dice **"Settings"**.
+3. Se abrira una pagina nueva de configuracion.
+4. Busca el campo que dice **"API Key"** — es una caja de texto en blanco.
+5. Pega la clave que te dieron en ese campo. La clave tiene un formato similar a este: `sk-ant-api03-XXXXX...`
+6. Haz clic en el boton **"Save & Validate"**.
+7. Si la clave es correcta, aparecera un mensaje en verde que dice que esta activa. Si aparece un mensaje en rojo, verifica que la clave este completa y sin espacios al inicio o al final.
+
+> No compartas tu clave con nadie ni la escribas en correos o chats. Es personal y confidencial.
 
 ---
 
