@@ -14,10 +14,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Extension scaffold, storage schema, API key settings, JD management, and Safari Xcode setup
 - [ ] **Phase 2: Profile Parsing** - LinkedIn DOM extraction, SPA navigation detection, and selector abstraction layer
-- [x] **Phase 3: Scoring Pipeline** - Hybrid keyword + Claude scoring, tier assignment, candidate storage, and score display (completed 2026-03-10)
-- [x] **Phase 4: Output Layer** - Popup UI, message generation and review, candidate history view, and CSV export (completed 2026-03-10)
+- [x] **Phase 3: Scoring Pipeline** - Hybrid keyword + Claude scoring, tier assignment, candidate storage, and score display (completed 2006-03-10)
+- [x] **Phase 4: Output Layer** - Popup UI, message generation and review, candidate history view, and CSV export (completed 2006-03-10)
 - [ ] **Phase 5: Scheduling and Notifications** - Layer 3 alarms, browser notifications, badge counter, and overdue contact list
-- [ ] **Phase 6: Safari Packaging and Cross-Browser Verification** - Signed Safari build, feature parity verification, and submission prep
 
 ## Phase Details
 
@@ -113,27 +112,3 @@ Plans:
 - [ ] 05-01-PLAN.md — Wave 1 (TDD): SCHED-01/02/03 tests + background.ts alarm creation, fire handler, refreshBadge
 - [ ] 05-02-PLAN.md — Wave 1 (parallel): SCHED-04 popup overdue L3 section (index.html + index.ts)
 - [ ] 05-03-PLAN.md — Wave 2: Build extension + human verification checkpoint (all four SCHED requirements in Chrome)
-
-### Phase 6: Safari Packaging and Cross-Browser Verification
-**Goal**: The extension runs identically in Safari with a signed Xcode build, all features verified at parity with Chrome, ready for App Store submission if distribution beyond developer mode is required
-**Depends on**: Phase 5
-**Requirements**: XBROW-01, XBROW-02, XBROW-03
-**Success Criteria** (what must be TRUE):
-  1. The Chrome build loads and passes a full end-to-end recruiter workflow without errors (evaluate → tier → message → export)
-  2. The Safari build loads in Safari via the Xcode project and passes the same end-to-end workflow as Chrome
-  3. Every feature available in Chrome is confirmed working in Safari: settings, JD management, profile parsing, scoring, messaging, CSV export, and Layer 3 scheduling
-**Plans**: TBD
-
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation | 3/7 | In Progress|  |
-| 2. Profile Parsing | 3/4 | In Progress|  |
-| 3. Scoring Pipeline | 6/6 | Complete   | 2026-03-10 |
-| 4. Output Layer | 5/5 | Complete   | 2026-03-10 |
-| 5. Scheduling and Notifications | 2/3 | In Progress|  |
-| 6. Safari Packaging and Cross-Browser Verification | 0/TBD | Not started | - |
