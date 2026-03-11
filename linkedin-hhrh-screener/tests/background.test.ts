@@ -5,6 +5,7 @@ import {
   handleEvaluate,
   handleGenerateMessage,
   handleSaveMessage,
+  refreshBadge,
   _setLastParsedProfileForTest,
 } from '../entrypoints/background';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
@@ -321,5 +322,213 @@ describe('handleSaveMessage', () => {
     expect(stored?.messageSentAt).toBeTruthy();
     // Verify it looks like an ISO 8601 string
     expect(new Date(stored!.messageSentAt!).toISOString()).toBe(stored!.messageSentAt);
+  });
+});
+
+// --- L3 JD fixture: React + TypeScript + Vue all mandatory → score 67% → L3 tier ---
+const mockL3Jd: JobDescription = {
+  id: 'l3-sched-jd-id',
+  title: 'Frontend Engineer L3 Sched',
+  rawText: 'React TypeScript Vue all required',
+  skills: [
+    { text: 'React', weight: 'mandatory' },
+    { text: 'TypeScript', weight: 'mandatory' },
+    { text: 'Vue', weight: 'mandatory' },
+  ],
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
+
+describe('SCHED-01: L3 alarm creation', () => {
+  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
+  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
+    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
+  });
+
+  it('evaluating an L3 candidate creates an alarm named l3-followup-{id} scheduled at contactAfter', async () => {
+    _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
+    await saveAnthropicApiKey(MOCK_API_KEY);
+    await saveJd(mockL3Jd);
+    await setActiveJdId('l3-sched-jd-id');
+
+    // Claude returns no additional matches — Vue is unmatched → score 67% → L3
+    const claudeJson = '{"additionalMatches": [], "rationale": "Vue not matched."}';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicResponse(claudeJson)));
+
+    const result = await handleEvaluate();
+
+    expect(result.error).toBeUndefined();
+    expect(result.tier).toBe('L3');
+
+    const allAlarms = await browser.alarms.getAll();
+    const alarm = allAlarms.find((a) => a.name === `l3-followup-${result.candidateId}`);
+    expect(alarm).toBeDefined();
+
+    // Alarm's scheduledTime should equal contactAfter in milliseconds
+    const candidates = await getAllCandidates();
+    const candidate = candidates.find((c) => c.id === result.candidateId);
+    expect(candidate?.contactAfter).toBeDefined();
+    expect(alarm!.scheduledTime).toBe(new Date(candidate!.contactAfter!).getTime());
+  });
+
+  it('evaluating a non-L3 candidate (L1) does NOT create any alarm', async () => {
+    _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
+    await saveAnthropicApiKey(MOCK_API_KEY);
+    await saveJd(mockJd); // L1 JD: React+TypeScript mandatory, Vue nice-to-have → score 80% → L1
+    await setActiveJdId('test-jd-id');
+
+    const claudeJson = '{"additionalMatches": [], "rationale": "Great match."}';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicResponse(claudeJson)));
+
+    const result = await handleEvaluate();
+
+    expect(result.tier).toBe('L1');
+
+    const allAlarms = await browser.alarms.getAll();
+    expect(allAlarms).toHaveLength(0);
+  });
+
+  it('re-evaluating the same profile when already L3 calls alarms.create again (idempotent)', async () => {
+    _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
+    await saveAnthropicApiKey(MOCK_API_KEY);
+    await saveJd(mockL3Jd);
+    await setActiveJdId('l3-sched-jd-id');
+
+    const claudeJson = '{"additionalMatches": [], "rationale": "Vue not matched."}';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicResponse(claudeJson)));
+
+    await handleEvaluate();
+    await handleEvaluate();
+
+    // Two evaluations → two alarms (different candidateIds since each evaluation is a new record)
+    const allAlarms = await browser.alarms.getAll();
+    expect(allAlarms.length).toBeGreaterThanOrEqual(1);
+    // Confirm all alarm names start with l3-followup-
+    expect(allAlarms.every((a) => a.name.startsWith('l3-followup-'))).toBe(true);
+  });
+});
+
+describe('SCHED-02: alarm fire notification', () => {
+  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
+  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
+    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
+  });
+
+  it('firing the alarm for an L3 candidate creates a notification naming the candidate', async () => {
+    const candidate: CandidateRecord = {
+      ...baseCandidateRecord(),
+      id: 'sched-candidate-01',
+      name: 'Alice Smith',
+      tier: 'L3',
+      contactAfter: new Date(Date.now() - 1000).toISOString(), // already overdue
+    };
+    await saveCandidate(candidate);
+
+    await fakeBrowser.alarms.onAlarm.trigger({
+      name: `l3-followup-${candidate.id}`,
+      scheduledTime: Date.now(),
+    });
+
+    const notifs = await browser.notifications.getAll();
+    expect(notifs[`notif-${candidate.id}`]).toBeDefined();
+    expect(notifs[`notif-${candidate.id}`].message).toContain('Alice Smith');
+  });
+
+  it('firing the alarm for a candidate whose messageSentAt is set does NOT create a notification', async () => {
+    const candidate: CandidateRecord = {
+      ...baseCandidateRecord(),
+      id: 'sched-candidate-02',
+      name: 'Bob Jones',
+      tier: 'L3',
+      contactAfter: new Date(Date.now() - 1000).toISOString(),
+      messageSentAt: new Date().toISOString(),
+    };
+    await saveCandidate(candidate);
+
+    await fakeBrowser.alarms.onAlarm.trigger({
+      name: `l3-followup-${candidate.id}`,
+      scheduledTime: Date.now(),
+    });
+
+    const notifs = await browser.notifications.getAll();
+    expect(notifs[`notif-${candidate.id}`]).toBeUndefined();
+  });
+
+  it('firing an alarm with an unrecognized name does nothing', async () => {
+    await fakeBrowser.alarms.onAlarm.trigger({
+      name: 'unrecognized-alarm',
+      scheduledTime: Date.now(),
+    });
+
+    const notifs = await browser.notifications.getAll();
+    expect(Object.keys(notifs)).toHaveLength(0);
+  });
+});
+
+describe('SCHED-03: badge refresh logic', () => {
+  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
+  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
+    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
+  });
+
+  it('refreshBadge() with one overdue uncontacted L3 candidate calls setBadgeText with "1"', async () => {
+    const candidate: CandidateRecord = {
+      ...baseCandidateRecord(),
+      id: 'badge-candidate-01',
+      tier: 'L3',
+      contactAfter: new Date(Date.now() - 1000).toISOString(), // overdue
+    };
+    await saveCandidate(candidate);
+
+    await refreshBadge();
+
+    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '1' });
+    expect(setBadgeColorSpy).toHaveBeenCalledWith({ color: '#E53935' });
+  });
+
+  it('refreshBadge() with zero overdue L3s calls setBadgeText with empty string', async () => {
+    await refreshBadge();
+
+    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
+  });
+
+  it('refreshBadge() with an L3 whose messageSentAt is set treats them as contacted (not counted)', async () => {
+    const candidate: CandidateRecord = {
+      ...baseCandidateRecord(),
+      id: 'badge-candidate-02',
+      tier: 'L3',
+      contactAfter: new Date(Date.now() - 1000).toISOString(),
+      messageSentAt: new Date().toISOString(), // already contacted
+    };
+    await saveCandidate(candidate);
+
+    await refreshBadge();
+
+    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
+    expect(setBadgeColorSpy).not.toHaveBeenCalled();
+  });
+
+  it('handleSaveMessage() on an L3 candidate triggers refreshBadge (setBadgeText called after save)', async () => {
+    const candidate: CandidateRecord = {
+      ...baseCandidateRecord(),
+      id: 'badge-candidate-03',
+      tier: 'L3',
+      contactAfter: new Date(Date.now() - 1000).toISOString(),
+    };
+    await saveCandidate(candidate);
+
+    await handleSaveMessage(candidate.id, 'Hi Alice');
+
+    // After saving, candidate has messageSentAt → overdue count drops to 0 → badge cleared
+    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
   });
 });
