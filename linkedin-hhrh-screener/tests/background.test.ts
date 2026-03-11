@@ -5,6 +5,7 @@ import {
   handleEvaluate,
   handleGenerateMessage,
   handleSaveMessage,
+  handleAlarm,
   refreshBadge,
   _setLastParsedProfileForTest,
 } from '../entrypoints/background';
@@ -17,11 +18,16 @@ beforeEach(() => {
   vi.unstubAllGlobals();
   // Reset in-memory profile state between tests
   _setLastParsedProfileForTest(null);
+  // browser.action is not implemented by fake-browser — mock globally so refreshBadge
+  // doesn't throw when called indirectly from handleEvaluate / handleSaveMessage
+  vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
+  vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   fakeBrowser.reset();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   _setLastParsedProfileForTest(null);
 });
 
@@ -340,14 +346,6 @@ const mockL3Jd: JobDescription = {
 };
 
 describe('SCHED-01: L3 alarm creation', () => {
-  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
-  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
-    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
-  });
-
   it('evaluating an L3 candidate creates an alarm named l3-followup-{id} scheduled at contactAfter', async () => {
     _setLastParsedProfileForTest({ profile: mockProfile, health: mockHealth });
     await saveAnthropicApiKey(MOCK_API_KEY);
@@ -412,14 +410,6 @@ describe('SCHED-01: L3 alarm creation', () => {
 });
 
 describe('SCHED-02: alarm fire notification', () => {
-  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
-  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
-    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
-  });
-
   it('firing the alarm for an L3 candidate creates a notification naming the candidate', async () => {
     const candidate: CandidateRecord = {
       ...baseCandidateRecord(),
@@ -430,7 +420,7 @@ describe('SCHED-02: alarm fire notification', () => {
     };
     await saveCandidate(candidate);
 
-    await fakeBrowser.alarms.onAlarm.trigger({
+    await handleAlarm({
       name: `l3-followup-${candidate.id}`,
       scheduledTime: Date.now(),
     });
@@ -451,7 +441,7 @@ describe('SCHED-02: alarm fire notification', () => {
     };
     await saveCandidate(candidate);
 
-    await fakeBrowser.alarms.onAlarm.trigger({
+    await handleAlarm({
       name: `l3-followup-${candidate.id}`,
       scheduledTime: Date.now(),
     });
@@ -461,7 +451,7 @@ describe('SCHED-02: alarm fire notification', () => {
   });
 
   it('firing an alarm with an unrecognized name does nothing', async () => {
-    await fakeBrowser.alarms.onAlarm.trigger({
+    await handleAlarm({
       name: 'unrecognized-alarm',
       scheduledTime: Date.now(),
     });
@@ -472,14 +462,6 @@ describe('SCHED-02: alarm fire notification', () => {
 });
 
 describe('SCHED-03: badge refresh logic', () => {
-  let setBadgeTextSpy: ReturnType<typeof vi.spyOn>;
-  let setBadgeColorSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    setBadgeTextSpy = vi.spyOn(browser.action, 'setBadgeText').mockResolvedValue(undefined);
-    setBadgeColorSpy = vi.spyOn(browser.action, 'setBadgeBackgroundColor').mockResolvedValue(undefined);
-  });
-
   it('refreshBadge() with one overdue uncontacted L3 candidate calls setBadgeText with "1"', async () => {
     const candidate: CandidateRecord = {
       ...baseCandidateRecord(),
@@ -491,14 +473,14 @@ describe('SCHED-03: badge refresh logic', () => {
 
     await refreshBadge();
 
-    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '1' });
-    expect(setBadgeColorSpy).toHaveBeenCalledWith({ color: '#E53935' });
+    expect(vi.mocked(browser.action.setBadgeText)).toHaveBeenCalledWith({ text: '1' });
+    expect(vi.mocked(browser.action.setBadgeBackgroundColor)).toHaveBeenCalledWith({ color: '#E53935' });
   });
 
   it('refreshBadge() with zero overdue L3s calls setBadgeText with empty string', async () => {
     await refreshBadge();
 
-    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
+    expect(vi.mocked(browser.action.setBadgeText)).toHaveBeenCalledWith({ text: '' });
   });
 
   it('refreshBadge() with an L3 whose messageSentAt is set treats them as contacted (not counted)', async () => {
@@ -513,8 +495,8 @@ describe('SCHED-03: badge refresh logic', () => {
 
     await refreshBadge();
 
-    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
-    expect(setBadgeColorSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(browser.action.setBadgeText)).toHaveBeenCalledWith({ text: '' });
+    expect(vi.mocked(browser.action.setBadgeBackgroundColor)).not.toHaveBeenCalled();
   });
 
   it('handleSaveMessage() on an L3 candidate triggers refreshBadge (setBadgeText called after save)', async () => {
@@ -529,6 +511,6 @@ describe('SCHED-03: badge refresh logic', () => {
     await handleSaveMessage(candidate.id, 'Hi Alice');
 
     // After saving, candidate has messageSentAt → overdue count drops to 0 → badge cleared
-    expect(setBadgeTextSpy).toHaveBeenCalledWith({ text: '' });
+    expect(vi.mocked(browser.action.setBadgeText)).toHaveBeenCalledWith({ text: '' });
   });
 });

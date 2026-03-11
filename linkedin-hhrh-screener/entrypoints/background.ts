@@ -1,4 +1,4 @@
-import { getAnthropicApiKey, getActiveJdId, getAllJds, saveCandidate, getCandidate } from '../src/storage/storage';
+import { getAnthropicApiKey, getActiveJdId, getAllJds, getAllCandidates, saveCandidate, getCandidate } from '../src/storage/storage';
 import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
@@ -19,6 +19,24 @@ export function _setLastParsedProfileForTest(
   value: { profile: CandidateProfile; health: ExtractionHealth } | null,
 ): void {
   lastParsedProfile = value;
+}
+
+// SCHED-03: badge refresh — counts overdue uncontacted L3 candidates
+export async function refreshBadge(): Promise<void> {
+  const candidates = await getAllCandidates();
+  const now = Date.now();
+  const overdueCount = candidates.filter(
+    (c) =>
+      c.tier === 'L3' &&
+      c.contactAfter !== undefined &&
+      new Date(c.contactAfter).getTime() <= now &&
+      !c.messageSentAt,
+  ).length;
+  const text = overdueCount > 0 ? String(overdueCount) : '';
+  await browser.action.setBadgeText({ text });
+  if (overdueCount > 0) {
+    await browser.action.setBadgeBackgroundColor({ color: '#E53935' });
+  }
 }
 
 export async function validateStoredCredentials(): Promise<{ valid: boolean; error?: string }> {
@@ -158,6 +176,14 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
 
   await saveCandidate(record);
 
+  // SCHED-01: create 7-day follow-up alarm for Layer 3 candidates
+  if (record.contactAfter) {
+    await browser.alarms.create(`l3-followup-${record.id}`, {
+      when: new Date(record.contactAfter).getTime(),
+    });
+  }
+  await refreshBadge();
+
   return {
     score,
     tier,
@@ -219,6 +245,8 @@ export async function handleSaveMessage(candidateId: string, messageText: string
   candidate.messageSentAt = new Date().toISOString();
   await saveCandidate(candidate);
 
+  await refreshBadge(); // SCHED-03: badge decrements when candidate is marked as contacted
+
   return { saved: true };
 }
 
@@ -232,7 +260,29 @@ export async function handleSavePhone(candidateId: string, phoneNumber: string):
   return { saved: true };
 }
 
+// SCHED-02: alarm fire handler — exported for direct unit testability
+export async function handleAlarm(alarm: { name: string; scheduledTime: number }): Promise<void> {
+  if (!alarm.name.startsWith('l3-followup-')) return;
+  const candidateId = alarm.name.replace('l3-followup-', '');
+  const candidate = await getCandidate(candidateId);
+  if (!candidate || candidate.messageSentAt) return; // already contacted
+  await browser.notifications.create(`notif-${candidateId}`, {
+    type: 'basic',
+    iconUrl: browser.runtime.getURL('/icon/128.png'),
+    title: 'L3 Follow-up Ready',
+    message: `Time to contact ${candidate.name} — their 7-day window has opened.`,
+  });
+  await refreshBadge();
+}
+
 export default defineBackground(() => {
+  // SCHED-02: show notification when 7-day alarm fires
+  browser.alarms.onAlarm.addListener(handleAlarm);
+
+  // SCHED-03: refresh badge on install and browser startup
+  browser.runtime.onInstalled.addListener(() => { void refreshBadge(); });
+  browser.runtime.onStartup.addListener(() => { void refreshBadge(); });
+
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'VALIDATE_API_KEY') {
       validateStoredCredentials().then(sendResponse);
