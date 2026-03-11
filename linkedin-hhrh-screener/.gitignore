@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-.output
+.output/chrome-mv3/chunks
 stats.html
 stats-*.json
 .wxt
