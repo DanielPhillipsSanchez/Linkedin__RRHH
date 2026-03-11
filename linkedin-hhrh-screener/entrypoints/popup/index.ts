@@ -46,6 +46,36 @@ async function renderCandidateList(): Promise<void> {
   listEl.appendChild(ul);
 }
 
+async function renderOverdueL3(): Promise<void> {
+  const el = document.getElementById('overdue-list');
+  if (!el) return;
+
+  const candidates = await getAllCandidates();
+  const now = Date.now();
+  const overdue = candidates.filter(
+    (c) =>
+      c.tier === 'L3' &&
+      c.contactAfter !== undefined &&
+      new Date(c.contactAfter).getTime() <= now &&
+      !c.messageSentAt,
+  );
+
+  if (overdue.length === 0) {
+    el.textContent = 'No L3 candidates awaiting contact';
+    return;
+  }
+
+  const ul = document.createElement('ul');
+  for (const c of overdue) {
+    const li = document.createElement('li');
+    const contactAfterDate = c.contactAfter!.substring(0, 10);
+    li.textContent = `${c.name} — contact window open since ${contactAfterDate}`;
+    ul.appendChild(li);
+  }
+  el.innerHTML = '';
+  el.appendChild(ul);
+}
+
 function showResult(result: EvaluateResult): void {
   const section = document.getElementById('result-section');
   if (!section) return;
@@ -254,3 +284,4 @@ document.getElementById('export-csv-btn')?.addEventListener('click', async () =>
 
 renderStorageUsage();
 renderCandidateList();
+renderOverdueL3();
