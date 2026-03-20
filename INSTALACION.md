@@ -1,4 +1,4 @@
-# Guia de Instalacion — LinkedIn HHRH Screener
+# Guia de Instalacion — EvolvrScreener
 
 Esta guia te explica, paso a paso, como instalar la extension en tu computadora. No necesitas saber nada de tecnologia para seguirla.
 
@@ -10,47 +10,22 @@ Necesitas tener instalado el navegador **Google Chrome**. Si no lo tienes, desca
 
 ---
 
-## Paso 1 — Descarga los archivos de la extension desde GitHub
+## Paso 1 — Recibe la carpeta de la extension
 
-No necesitas tener cuenta en GitHub para descargar la extension. Sigue estos pasos:
+El equipo de soporte te compartira directamente la carpeta **`chrome-mv3`** (por USB, carpeta compartida o correo). No necesitas descargar nada de internet.
 
-1. Abre Google Chrome (o cualquier navegador) y ve a la pagina del proyecto en GitHub. El enlace te lo compartira tu equipo.
+Una vez que tengas la carpeta, guardala en un lugar fijo de tu computadora (por ejemplo, en **Documentos**). No la muevas ni la elimines despues de instalarla.
 
-2. Una vez en la pagina, busca el boton verde que dice **"Code"** — esta en la parte superior derecha de la pantalla.
-
-3. Al hacer clic en ese boton, se despliega un menu. Haz clic en **"Download ZIP"** (al fondo del menu).
-
-   ![Boton Code → Download ZIP]
-
-4. Se descargara un archivo llamado algo como **`Linkedin__RRHH-main.zip`** en tu carpeta de Descargas.
-
-5. Ahora descomprime ese archivo:
-   - **En Windows**: haz clic derecho sobre el archivo `.zip` → selecciona **"Extraer todo"** → haz clic en **"Extraer"**.
-   - **En Mac**: haz doble clic sobre el archivo `.zip` y se descomprimira automaticamente.
-
-6. Se creara una carpeta. Abrela y entra a la carpeta **`linkedin-hhrh-screener`**.
-
-7. Dentro encontraras una carpeta llamada **`.output`** — pero puede que no la veas porque su nombre empieza con un punto, lo que la hace invisible por defecto. Para mostrarla:
-
-   - **En Windows**: dentro del Explorador de archivos, haz clic en la pestana **"Ver"** (en la barra superior) y activa la casilla **"Elementos ocultos"**. La carpeta `.output` aparecera.
-   - **En Mac**: dentro de la carpeta `linkedin-hhrh-screener`, presiona al mismo tiempo las teclas **Cmd + Shift + Punto ( . )**. Las carpetas ocultas apareceran en color gris. Vuelve a presionar la misma combinacion para ocultarlas de nuevo.
-
-8. Abre la carpeta **`.output`** → luego abre **`chrome-mv3`**. Esa es la carpeta que necesitas. La ruta completa es:
-
-   ```
-   Linkedin__RRHH-main → linkedin-hhrh-screener → .output → chrome-mv3
-   ```
-
-9. Guarda esta ubicacion en mente (o mueve la carpeta `chrome-mv3` a tu Escritorio o Documentos para encontrarla facilmente).
-
-> Importante: no muevas ni elimines la carpeta `chrome-mv3` despues de instalar la extension. Chrome la necesita en ese lugar para funcionar.
+> Si te compartieron un archivo `.zip`, descomprimelo primero:
+> - **En Windows**: clic derecho → "Extraer todo" → "Extraer"
+> - **En Mac**: doble clic sobre el archivo `.zip`
 
 ---
 
 ## Paso 2 — Abre la pantalla de extensiones en Chrome
 
 1. Abre **Google Chrome**.
-2. En la barra de direcciones (donde normalmente escribes una pagina web), escribe exactamente esto y presiona **Enter**:
+2. En la barra de direcciones, escribe exactamente esto y presiona **Enter**:
 
 ```
 chrome://extensions/
@@ -73,10 +48,10 @@ En la esquina superior derecha de esa pantalla veras un interruptor que dice **"
 
 1. Haz clic en el boton **"Cargar extension sin empaquetar"** que aparecera en la parte superior izquierda.
 2. Se abrira una ventana para seleccionar una carpeta.
-3. Busca y selecciona la carpeta **`chrome-mv3`** que guardaste en el Paso 1.
+3. Busca y selecciona la carpeta **`chrome-mv3`** que recibiste en el Paso 1.
 4. Haz clic en **"Seleccionar carpeta"**.
 
-Si todo salio bien, la extension aparecera en la lista con el nombre **"LinkedIn HHRH Screener"** y sin ningun mensaje de error en rojo.
+Si todo salio bien, la extension aparecera en la lista con el nombre **"EvolvrScreener"** y sin ningun mensaje de error en rojo.
 
 ---
 
@@ -86,60 +61,53 @@ Para tener la extension siempre a mano:
 
 1. Busca el icono de un **rompecabezas** en la esquina superior derecha de Chrome (junto a la barra de direcciones).
 2. Haz clic en el.
-3. Busca **"LinkedIn HHRH Screener"** en la lista.
+3. Busca **"EvolvrScreener"** en la lista.
 4. Haz clic en el icono del **pin** que aparece a la derecha del nombre.
 
 Ahora el icono de la extension quedara visible en tu barra de Chrome para usarlo en cualquier momento.
 
----
-
-## Paso 6 — Agrega tu clave de acceso (API Key)
-
-> Este paso solo se hace **una vez**. Despues de guardarlo, la extension lo recordara siempre.
-
-La extension usa inteligencia artificial (Claude AI) para evaluar candidatos. Para que funcione, necesitas agregarle una clave de acceso. Tu administrador o encargado de equipo te la proporcionara.
-
-Sigue estos pasos:
-
-1. Haz clic en el icono de la extension en la barra de Chrome (el que fijaste en el Paso 5).
-2. Se abrira una ventana pequena. En la esquina superior derecha de esa ventana, haz clic en el enlace que dice **"Settings"**.
-3. Se abrira una pagina nueva de configuracion.
-4. Busca el campo que dice **"API Key"** — es una caja de texto en blanco.
-5. Pega la clave que te dieron en ese campo. La clave tiene un formato similar a este: `sk-ant-api03-XXXXX...`
-6. Haz clic en el boton **"Save & Validate"**.
-7. Si la clave es correcta, aparecera un mensaje en verde que dice que esta activa. Si aparece un mensaje en rojo, verifica que la clave este completa y sin espacios al inicio o al final.
-
-> No compartas tu clave con nadie ni la escribas en correos o chats. Es personal y confidencial.
+> La extension viene con la clave de acceso ya configurada. No necesitas hacer ningun paso adicional de configuracion antes de usarla.
 
 ---
 
-## Paso 7 — Crea tu primera Descripcion de Puesto
+## Paso 6 — Crea tu primera Busqueda de Evolvers
 
 Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta buscando.
 
-1. En la misma pagina de configuracion, busca la seccion **"Job Descriptions"**.
-2. Escribe el nombre del puesto en el campo de titulo (por ejemplo: "Analista de Datos").
-3. Pega el texto completo de la oferta de trabajo en el campo de descripcion.
-4. Haz clic en **"Add JD"**.
-5. A continuacion, agrega las habilidades que buscas en el candidato:
-   - Escribe el nombre de cada habilidad (por ejemplo: "Excel", "Python", "Comunicacion").
-   - Indica si es **obligatoria** (Mandatory) o **deseable** (Nice-to-have).
-   - Haz clic en **"Add Skill"** para cada una.
-6. Cuando termines, marca el circulo (radio button) junto al nombre del puesto para activarlo.
+1. Haz clic en el icono de la extension en la barra de Chrome.
+2. En la esquina superior derecha del popup, haz clic en el enlace **"Ajustes"**.
+3. Se abrira la pagina de configuracion.
+4. Busca la seccion **"Formulario de requisicion"**.
+5. Escribe el nombre del puesto en el campo **"Titulo"** (por ejemplo: "Analista de Datos").
+6. Pega el texto completo de la oferta de trabajo en el campo de descripcion.
+7. Haz clic en **"Anadir oferta"**.
+8. A continuacion, agrega las habilidades que buscas en el candidato:
+   - Escribe el nombre de cada habilidad (por ejemplo: "Excel", "Python", "SQL").
+   - Indica si es **Obligatoria** o **Valorable**.
+   - Haz clic en **"Anadir"** para cada una.
+9. Sube a la seccion **"Nueva busqueda de Evolvers"** y marca el circulo (radio button) junto al nombre del puesto para activarlo.
+
+> Tambien puedes importar la oferta directamente desde un archivo **Excel, CSV, Word o PDF** en vez de pegarla manualmente.
 
 ---
 
 ## Listo! Asi se usa la extension cada dia
 
 1. Abre LinkedIn en Chrome y navega al perfil de un candidato.
-2. Haz clic en el icono de la extension.
-3. Haz clic en **"Evaluate"** — el boton se desactivara mientras procesa.
-   > **Tiempo de espera**: la evaluacion tarda entre **10 y 20 segundos**. Primero analiza las habilidades por palabras clave y luego consulta a la inteligencia artificial (Claude AI) para completar el analisis. **No hagas clic de nuevo** mientras esperas — el boton volvera a activarse solo cuando el resultado este listo.
-4. La extension te mostrara el nivel del candidato (**Nivel 1, 2, 3 o Descartado**) y un resumen de sus habilidades, ademas de preguntas tecnicas sugeridas para la entrevista.
-5. Si evaluaste un candidato que NO fue descartado, puedes hacer clic en **"Generate Message"** para generar un mensaje de contacto personalizado.
+2. Haz clic en el icono de la extension (el logo de Evolvr en la barra de Chrome).
+3. Haz clic en **"Evaluar"** — el boton se desactivara mientras procesa.
+   > **Tiempo de espera**: la evaluacion tarda entre **10 y 20 segundos**. Primero analiza las habilidades por palabras clave y luego consulta a la inteligencia artificial (Claude AI). **No hagas clic de nuevo** mientras esperas — el boton volvera a activarse solo cuando el resultado este listo.
+4. La extension te mostrara el nivel del candidato y un resumen de sus habilidades:
+   - **Encaje alto** — excelente coincidencia, contactar de inmediato
+   - **Buen encaje** — buena coincidencia, contactar como segunda prioridad
+   - **Encaje parcial** — vale la pena explorar, contactar despues de 7 dias
+   - **Descartado** — no cumple los requisitos minimos
+5. Si cierras el popup y lo vuelves a abrir en el mismo perfil, el resultado anterior se recupera automaticamente.
+6. Para cambiar el idioma de la interfaz y del analisis, haz clic en las banderas 🇨🇴 🇺🇸 en la esquina superior derecha del popup. La bandera del idioma activo aparece resaltada en naranja.
+7. Si el candidato no fue descartado, puedes hacer clic en **"Redactar mensaje"** para generar un mensaje de contacto personalizado.
    > **Tiempo de espera**: el mensaje tarda entre **5 y 10 segundos** en generarse. No hagas clic varias veces — espera a que aparezca el texto en la pantalla.
-6. Cuando termines tu jornada, puedes exportar todos los candidatos del dia a un archivo Excel haciendo clic en **"Export CSV"**. El archivo se descargara en espanol e incluye las habilidades, el puntaje y las preguntas de entrevista de cada candidato.
-7. Si quieres empezar de cero al dia siguiente, haz clic en **"Clear Candidates"** para limpiar la lista.
+8. Cuando termines tu jornada, exporta todos los candidatos del dia a un archivo Excel haciendo clic en **"Exportar CSV"**.
+9. Si quieres empezar de cero al dia siguiente, haz clic en **"Borrar candidatos"** para limpiar la lista.
 
 ---
 
@@ -148,17 +116,17 @@ Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta
 **No veo el icono de la extension en Chrome**
 Sigue el Paso 5 para fijarlo en la barra.
 
-**Aparece un error rojo que dice "No API key"**
-Ve a Settings y verifica que la clave de acceso este guardada correctamente.
-
 **La extension no detecta el perfil del candidato**
 Asegurate de estar en una URL de LinkedIn que tenga el formato `linkedin.com/in/nombre-del-candidato` y espera 2 segundos despues de que cargue la pagina.
 
 **El puntaje del candidato parece bajo aunque tiene buena experiencia**
-Verifica que las habilidades marcadas como **Mandatory** sean las realmente criticas del cargo. La extension da el 80% del puntaje a esas habilidades y las habilidades implicitas del rol (por ejemplo: numpy para un Data Scientist) se reconocen automaticamente aunque no esten listadas en el perfil.
+Verifica que las habilidades marcadas como **Obligatoria** sean las realmente criticas del cargo. La extension da el 80% del puntaje a esas habilidades. Las habilidades implicitas del rol (por ejemplo: numpy para un Data Scientist) se reconocen automaticamente aunque no esten listadas en el perfil de LinkedIn.
+
+**El resultado desaparecio al cerrar y reabrir el popup**
+Si navegaste a un perfil diferente, el resultado cambia al nuevo perfil. Si sigues en el mismo perfil, el resultado se debe restaurar automaticamente. Si no aparece, vuelve a hacer clic en "Evaluar".
 
 **Movi o elimine la carpeta `chrome-mv3` por error**
-Tendras que repetir los pasos 1 a 4 con una nueva copia de la carpeta.
+Pide al equipo de soporte que te vuelva a compartir la carpeta y repite los pasos 4 y 5.
 
 ---
 

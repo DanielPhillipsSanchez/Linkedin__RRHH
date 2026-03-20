@@ -26,8 +26,12 @@ function applyStaticTranslations(): void {
   const settingsLink = document.getElementById('settings-link');
   if (settingsLink) settingsLink.textContent = tr.settings;
 
-  const langBtn = document.getElementById('lang-toggle-btn') as HTMLButtonElement;
-  if (langBtn) langBtn.textContent = tr.langToggle;
+  const flagEs = document.getElementById('flag-es');
+  const flagEn = document.getElementById('flag-en');
+  if (flagEs && flagEn) {
+    flagEs.classList.toggle('lang-flag--active', currentLang === 'es');
+    flagEn.classList.toggle('lang-flag--active', currentLang === 'en');
+  }
 
   // Evaluate button — only if not in loading state
   const evalBtn = document.getElementById('evaluate-btn') as HTMLButtonElement;
@@ -338,8 +342,13 @@ async function switchLanguage(): Promise<void> {
 
 // ---- Event listeners ----
 
-document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
-  void switchLanguage();
+const langToggleEl = document.getElementById('lang-toggle-btn');
+langToggleEl?.addEventListener('click', () => { void switchLanguage(); });
+langToggleEl?.addEventListener('keydown', (e) => {
+  if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+    e.preventDefault();
+    void switchLanguage();
+  }
 });
 
 document.getElementById('settings-link')?.addEventListener('click', (e) => {

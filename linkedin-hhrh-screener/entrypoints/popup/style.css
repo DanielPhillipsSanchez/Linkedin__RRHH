@@ -88,23 +88,34 @@ header a {
 
 header a:hover { color: var(--brand); }
 
-.lang-btn {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--brand);
+.lang-flags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: var(--brand-faint);
   border: 1px solid var(--brand-border);
-  border-radius: 6px;
-  padding: 3px 8px;
+  border-radius: 8px;
+  padding: 3px 5px;
   cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.06em;
 }
 
-.lang-btn:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+.lang-flag {
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
+  padding: 2px 3px;
+  opacity: 0.35;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.lang-flag--active {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--brand-dark);
+  background: rgba(163, 65, 30, 0.12);
+}
+
+.lang-flags:hover .lang-flag:not(.lang-flag--active) {
+  opacity: 0.65;
 }
 
 /* ---- Evaluate button ---- */
