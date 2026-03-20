@@ -36,6 +36,8 @@ export interface EvaluateResult {
   matchedSkills: string[];
   missingSkills: string[];
   rationale: string;
+  experienceLevel?: 'junior' | 'mid' | 'senior' | 'staff';
+  redFlags?: Array<{ flag: string; question: string; expectedAnswer: string }>;
   candidateId: string;
   error?: string;
   /** Non-fatal warning (e.g. Claude API error — score is keyword-only) */

@@ -56,7 +56,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No profile data — please wait for the page to fully load',
+      error: 'No hay datos del perfil — espera a que la página cargue del todo',
     };
   }
 
@@ -70,7 +70,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No Anthropic API key — please add it in Options',
+      error: 'No hay clave API de Anthropic — añádela en Ajustes',
     };
   }
 
@@ -84,7 +84,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No active JD — please select a job description in Options',
+      error: 'No hay ninguna oferta activa — selecciona una en Ajustes',
     };
   }
 
@@ -99,7 +99,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'Active JD not found — please re-select a job description in Options',
+      error: 'La oferta activa no se encontró — vuelve a seleccionarla en Ajustes',
     };
   }
   if (jd.skills.length === 0) {
@@ -111,11 +111,29 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'Active JD has no skills — please add skills in Options before evaluating',
+      error: 'La oferta activa no tiene habilidades — añádelas en Ajustes antes de evaluar',
     };
   }
 
   const { profile } = stored;
+
+  // Deduplication: return cached result if this candidate+JD was already evaluated
+  const existing = (await getAllCandidates()).find(
+    (c) => c.profileUrl === profile.profileUrl && c.jdId === jd.id,
+  );
+  if (existing) {
+    return {
+      score: existing.score,
+      tier: existing.tier,
+      tierLabel: TIER_LABELS[existing.tier],
+      matchedSkills: existing.matchedSkills,
+      missingSkills: existing.missingSkills,
+      rationale: existing.rationale ?? '',
+      experienceLevel: existing.experienceLevel,
+      redFlags: existing.redFlags ?? [],
+      candidateId: existing.id,
+    };
+  }
 
   // Build a full-text blob from about, headline, and experience titles for fallback matching
   const profileText = [
@@ -127,25 +145,31 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   // Keyword pass — checks skills section first, then falls back to full profile text
   const { matchedSkills, unmatchedSkills } = runKeywordPass(jd.skills, profile.skills, profileText);
 
-  // Claude refinement (skip if nothing unmatched)
+  // Claude refinement — always called to get experience level + rationale
+  // even when all skills matched via keyword pass
   let additionalMatches: string[] = [];
+  let impliedByExperience: string[] = [];
+  let experienceLevel: CandidateRecord['experienceLevel'] = undefined;
   let rationale = '';
+  let redFlags: CandidateRecord['redFlags'] = [];
   let claudeWarning: string | undefined;
-  if (unmatchedSkills.length > 0) {
-    const refined = await refineWithClaude(apiKey, profile, unmatchedSkills);
-    additionalMatches = refined.additionalMatches;
-    rationale = refined.rationale;
-    if (refined.claudeError === '401') {
-      claudeWarning = 'Claude API auth failed — please update your API key in Options. Score shown is keyword-only.';
-    } else if (refined.claudeError === 'network') {
-      claudeWarning = 'Claude API unreachable — score is keyword-only.';
-    } else if (refined.claudeError) {
-      claudeWarning = `Claude API error: ${refined.claudeError} — score is keyword-only.`;
-    }
+
+  const refined = await refineWithClaude(apiKey, profile, unmatchedSkills, jd.skills);
+  additionalMatches = refined.additionalMatches;
+  impliedByExperience = refined.impliedByExperience;
+  experienceLevel = refined.experienceLevel;
+  rationale = refined.rationale;
+  redFlags = refined.redFlags;
+  if (refined.claudeError === '401') {
+    claudeWarning = 'Error de autenticación con la API de Claude — actualiza tu clave en Ajustes. La puntuación mostrada es solo por palabras clave.';
+  } else if (refined.claudeError === 'network') {
+    claudeWarning = 'No se pudo conectar con la API de Claude — la puntuación es solo por palabras clave.';
+  } else if (refined.claudeError) {
+    claudeWarning = `Error en la API de Claude: ${refined.claudeError} — puntuación solo por palabras clave.`;
   }
 
-  // Final matched set
-  const allMatchedTexts = new Set([...matchedSkills, ...additionalMatches]);
+  // Final matched set: keyword matches + Claude synonym matches + experience-implied matches
+  const allMatchedTexts = new Set([...matchedSkills, ...additionalMatches, ...impliedByExperience]);
   const score = computeScore(jd.skills, allMatchedTexts);
   const tier = assignTier(score, jd.skills.length);
   const tierLabel = TIER_LABELS[tier];
@@ -164,6 +188,9 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     linkedinHeadline: profile.headline,
     score,
     tier,
+    experienceLevel,
+    rationale,
+    redFlags,
     matchedSkills: [...allMatchedTexts],
     missingSkills,
     outreachMessage: '',
@@ -191,6 +218,8 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     matchedSkills: [...allMatchedTexts],
     missingSkills,
     rationale,
+    experienceLevel,
+    redFlags,
     candidateId: record.id,
     ...(claudeWarning ? { warning: claudeWarning } : {}),
   };
@@ -198,12 +227,12 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
 
 export async function handleGenerateMessage(candidateId: string): Promise<GenerateMessageResult> {
   const candidate = await getCandidate(candidateId);
-  if (!candidate) return { message: '', error: 'Candidate not found' };
+  if (!candidate) return { message: '', error: 'Candidato no encontrado' };
 
-  if (candidate.tier === 'rejected') return { message: '', error: 'No outreach message for rejected candidates' };
+  if (candidate.tier === 'rejected') return { message: '', error: 'No se generan mensajes para candidatos descartados' };
 
   const apiKey = await getAnthropicApiKey();
-  if (!apiKey) return { message: '', error: 'No Anthropic API key — please configure it in Options' };
+  if (!apiKey) return { message: '', error: 'No hay clave API de Anthropic — configúrala en Ajustes' };
 
   const jds = await getAllJds();
   const jd = jds.find((j) => j.id === candidate.jdId);
@@ -239,7 +268,7 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
 
 export async function handleSaveMessage(candidateId: string, messageText: string): Promise<SaveMessageResult> {
   const candidate = await getCandidate(candidateId);
-  if (!candidate) return { saved: false, error: 'Candidate not found' };
+  if (!candidate) return { saved: false, error: 'Candidato no encontrado' };
 
   candidate.messageSentText = messageText;
   candidate.messageSentAt = new Date().toISOString();
@@ -252,7 +281,7 @@ export async function handleSaveMessage(candidateId: string, messageText: string
 
 export async function handleSavePhone(candidateId: string, phoneNumber: string): Promise<SavePhoneResult> {
   const candidate = await getCandidate(candidateId);
-  if (!candidate) return { saved: false, error: 'Candidate not found' };
+  if (!candidate) return { saved: false, error: 'Candidato no encontrado' };
 
   candidate.phoneNumber = phoneNumber;
   await saveCandidate(candidate);
@@ -269,8 +298,8 @@ export async function handleAlarm(alarm: { name: string; scheduledTime: number }
   await browser.notifications.create(`notif-${candidateId}`, {
     type: 'basic',
     iconUrl: browser.runtime.getURL('/icon/128.png'),
-    title: 'L3 Follow-up Ready',
-    message: `Time to contact ${candidate.name} — their 7-day window has opened.`,
+    title: 'Seguimiento L3 pendiente',
+    message: `Es momento de contactar a ${candidate.name} — han pasado los 7 días de espera.`,
   });
   await refreshBadge();
 }

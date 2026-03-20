@@ -4,37 +4,33 @@
 export type Tier = 'L1' | 'L2' | 'L3' | 'rejected';
 
 export const TIER_LABELS: Record<Tier, string> = {
-  L1: 'Layer 1',
-  L2: 'Layer 2',
-  L3: 'Layer 3',
-  rejected: 'Rejected',
+  L1: 'Nivel 1 — Encaje alto',
+  L2: 'Nivel 2 — Buen encaje',
+  L3: 'Nivel 3 — Encaje parcial',
+  rejected: 'Descartado',
 };
 
 /**
  * Maps a score (0–100) to a candidate tier.
  *
- * When the JD has more than 8 skills (detailed profile), lower thresholds apply
- * because exact keyword coverage naturally drops with larger skill sets:
- *   >= 60 → L1
- *   >= 54 → L2
- *   >= 49 → L3
- *   <  49 → rejected
+ * Unified thresholds — no longer split by skill count because the 80/20
+ * mandatory/nice-to-have formula already normalises JDs of any size.
  *
- * For JDs with 8 or fewer skills (standard profile):
- *   >= 80 → L1
- *   >= 71 → L2
- *   >= 60 → L3
- *   <  60 → rejected
+ * Rationale:
+ *   - Matching all mandatory skills always yields ≥ 80, so L1 at 75 means
+ *     a candidate can miss one mandatory and still reach L1 if they cover
+ *     enough nice-to-have skills.
+ *   - Profiles on LinkedIn are never complete — implied skills matter and
+ *     the Claude pass already credits them; thresholds must reflect that.
+ *
+ *   >= 75 → L1  (muy buen encaje)
+ *   >= 63 → L2  (buen encaje con alguna brecha menor)
+ *   >= 50 → L3  (encaje parcial, vale la pena explorar)
+ *   <  50 → rejected
  */
-export function assignTier(score: number, skillCount = 0): Tier {
-  if (skillCount > 8) {
-    if (score >= 60) return 'L1';
-    if (score >= 54) return 'L2';
-    if (score >= 49) return 'L3';
-    return 'rejected';
-  }
-  if (score >= 80) return 'L1';
-  if (score >= 71) return 'L2';
-  if (score >= 60) return 'L3';
+export function assignTier(score: number, _skillCount = 0): Tier {
+  if (score >= 75) return 'L1';
+  if (score >= 63) return 'L2';
+  if (score >= 50) return 'L3';
   return 'rejected';
 }

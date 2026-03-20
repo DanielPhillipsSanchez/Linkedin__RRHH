@@ -23,6 +23,7 @@ export async function anthropicComplete(
   apiKey: string,
   prompt: string,
   model = 'claude-haiku-4-5-20251001',
+  maxTokens = 1024,
 ): Promise<AnthropicResponse> {
   let response: Response;
   try {
@@ -32,7 +33,7 @@ export async function anthropicComplete(
       headers: ANTHROPIC_HEADERS(apiKey),
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),
     });

@@ -4,7 +4,8 @@
 
 import type { Skill } from '../storage/schema';
 
-const WEIGHT: Record<Skill['weight'], number> = {
+// Weights are only used as fallback; computeScore uses a two-bucket formula.
+const _WEIGHT: Record<Skill['weight'], number> = {
   mandatory: 2,
   'nice-to-have': 1,
 };
@@ -32,28 +33,32 @@ export function skillMatches(jdSkill: string, candidateSkills: string[]): boolea
 }
 
 /**
- * Computes weighted score as a rounded percentage.
+ * Computes score using a two-bucket formula:
+ *   mandatory skills  → 80% of the final score
+ *   nice-to-have      → 20% of the final score
  *
- * mandatory skills contribute 2 points, nice-to-have contribute 1 point.
- * matchedSkillTexts is a Set of JD skill text strings (verbatim, as they appear in jdSkills[].text).
- * Returns 0 if total possible points is 0.
+ * This ensures a candidate who matches all mandatory skills always scores ≥ 80
+ * regardless of how many nice-to-have skills the JD lists.
+ * If a bucket is empty, its full weight flows to the other bucket so the
+ * formula stays at 100% when all available skills match.
  */
 export function computeScore(jdSkills: Skill[], matchedSkillTexts: Set<string>): number {
   if (jdSkills.length === 0) return 0;
 
-  let totalPoints = 0;
-  let matchedPoints = 0;
+  const mandatory = jdSkills.filter((s) => s.weight === 'mandatory');
+  const niceToHave = jdSkills.filter((s) => s.weight === 'nice-to-have');
 
-  for (const skill of jdSkills) {
-    const points = WEIGHT[skill.weight];
-    totalPoints += points;
-    if (matchedSkillTexts.has(skill.text)) {
-      matchedPoints += points;
-    }
-  }
+  const mandatoryMatched = mandatory.filter((s) => matchedSkillTexts.has(s.text)).length;
+  const niceMatched = niceToHave.filter((s) => matchedSkillTexts.has(s.text)).length;
 
-  if (totalPoints === 0) return 0;
-  return Math.round((matchedPoints / totalPoints) * 100);
+  const mandatoryScore = mandatory.length > 0 ? mandatoryMatched / mandatory.length : 1;
+  const niceScore = niceToHave.length > 0 ? niceMatched / niceToHave.length : 1;
+
+  // If only one bucket exists, treat the other as fully matched (weight collapses to 100%)
+  if (mandatory.length === 0) return Math.round(niceScore * 100);
+  if (niceToHave.length === 0) return Math.round(mandatoryScore * 100);
+
+  return Math.round((mandatoryScore * 0.8 + niceScore * 0.2) * 100);
 }
 
 /**

@@ -397,3 +397,4 @@ pnpm wxt build
 ---
 
 *Desarrollado para equipos de RRHH — LinkedIn HHRR Candidate Screener v1*
+

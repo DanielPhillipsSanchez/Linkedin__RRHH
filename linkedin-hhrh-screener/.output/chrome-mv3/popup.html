@@ -3,61 +3,67 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn HHRH Screener</title>
+    <title>HHRH Screener</title>
     <meta name="manifest.type" content="browser_action">
-    <script type="module" crossorigin src="/chunks/popup-4mXeqwOt.js"></script>
+    <script type="module" crossorigin src="/chunks/popup-DLTxDPl_.js"></script>
     <link rel="modulepreload" crossorigin href="/chunks/storage-ByVmRwmH.js">
-    <link rel="stylesheet" crossorigin href="/assets/popup-Ck09xR37.css">
+    <link rel="stylesheet" crossorigin href="/assets/popup-tYsAsf-t.css">
   </head>
   <body>
     <div id="app">
       <header>
         <h1>HHRH Screener</h1>
-        <p><a id="settings-link" href="#">Settings</a></p>
+        <p><a id="settings-link" href="#">Ajustes</a></p>
       </header>
 
       <section id="evaluate-section">
-        <button id="evaluate-btn" type="button">Evaluate</button>
+        <button id="evaluate-btn" type="button">Evaluar</button>
       </section>
 
       <section id="result-section" hidden>
         <div id="result-tier"></div>
         <div id="result-score"></div>
+        <div id="result-experience-level"></div>
         <div id="result-matched-skills"></div>
         <div id="result-missing-skills"></div>
         <div id="result-rationale"></div>
         <div id="result-error" class="error-message"></div>
       </section>
 
+      <section id="red-flags-section" hidden>
+        <h2>⚑ Alertas de perfil y preguntas para la entrevista</h2>
+        <div id="red-flags-list"></div>
+      </section>
+
       <section id="message-section" hidden>
-        <h2>Outreach Message</h2>
-        <button id="generate-msg-btn" type="button" disabled>Generate Message</button>
-        <textarea id="message-textarea" rows="6" placeholder="Message will appear here..."></textarea>
+        <h2>Mensaje de contacto</h2>
+        <button id="generate-msg-btn" type="button" disabled>Redactar mensaje</button>
+        <textarea id="message-textarea" rows="6" placeholder="El mensaje aparecerá aquí..."></textarea>
         <div id="message-actions">
-          <button id="copy-msg-btn" type="button" disabled>Copy</button>
-          <button id="open-linkedin-btn" type="button" disabled>Open LinkedIn Message</button>
-          <button id="mark-sent-btn" type="button" disabled>Mark as Sent</button>
+          <button id="copy-msg-btn" type="button" disabled>Copiar</button>
+          <button id="open-linkedin-btn" type="button" disabled>Abrir en LinkedIn</button>
+          <button id="mark-sent-btn" type="button" disabled>Marcar como enviado</button>
         </div>
         <div id="message-status"></div>
       </section>
 
       <section id="export-section">
-        <button id="export-csv-btn" type="button">Export CSV</button>
-        <button id="clear-candidates-btn" type="button">Clear Candidates</button>
+        <button id="export-csv-btn" type="button">Exportar CSV</button>
+        <button id="clear-candidates-btn" type="button">Borrar candidatos</button>
       </section>
 
       <section id="storage-section">
-        <div id="storage-usage">Storage: loading...</div>
+        <div id="storage-usage">Almacenamiento: cargando...</div>
       </section>
 
       <section id="overdue-section">
-        <h2>L3 Follow-ups Due</h2>
-        <div id="overdue-list">Loading...</div>
+        <h2>Seguimientos pendientes (L3)</h2>
+        <div id="overdue-list">Cargando...</div>
       </section>
 
       <section id="history-section">
-        <h2>Recent Candidates</h2>
-        <div id="candidate-list">Loading...</div>
+        <h2>Candidatos recientes</h2>
+        <div id="candidate-list">Cargando...</div>
       </section>
     </div>
   </body>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LinkedIn HHRH Screener — Settings</title>
+    <title>HHRH Screener — Ajustes</title>
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -152,14 +152,14 @@
     </style>
   </head>
   <body>
-    <h1>LinkedIn HHRH Screener Settings</h1>
+    <h1>Ajustes — HHRH Screener</h1>
 
     <section id="claude-api-key-section">
-      <h2>Claude API Key</h2>
+      <h2>Clave API de Claude</h2>
       <p style="color:#555; font-size:0.9rem; margin-bottom:12px;">
-        Enter your Anthropic Claude API key. Required for candidate scoring and message generation.
+        Introduce tu clave API de Anthropic. Es necesaria para evaluar candidatos y generar mensajes de contacto.
       </p>
-      <label for="claude-api-key-input">API Key</label>
+      <label for="claude-api-key-input">Clave API</label>
       <input
         type="password"
         id="claude-api-key-input"
@@ -167,21 +167,21 @@
         autocomplete="off"
       />
       <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <button id="claude-api-key-save-btn">Save &amp; Validate</button>
-        <button id="claude-api-key-clear-btn">Clear Key</button>
+        <button id="claude-api-key-save-btn">Guardar y verificar</button>
+        <button id="claude-api-key-clear-btn">Eliminar clave</button>
       </div>
       <span id="claude-api-key-status"></span>
       <p id="claude-api-key-indicator"></p>
     </section>
 
     <section id="active-jd-section">
-      <h2>Active Job Description</h2>
-      <p style="color:#555; font-size:0.9rem; margin-bottom: 12px;">Select which JD to use for candidate evaluations.</p>
+      <h2>Oferta activa</h2>
+      <p style="color:#555; font-size:0.9rem; margin-bottom: 12px;">Selecciona qué oferta usar al evaluar candidatos.</p>
       <div id="active-jd-selector"></div>
     </section>
 
     <section id="jd-section">
-      <h2>Job Descriptions</h2>
+      <h2>Ofertas de trabajo</h2>
       <ul id="jd-list"></ul>
 
       <div id="jd-add-form">
@@ -201,14 +201,16 @@
 
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid #eee;">
           <p style="font-size:0.9rem; color:#555; margin-bottom:8px;">
-            O importa desde Excel (.xlsx). El archivo debe tener una hoja con columnas como
-            <em>Título</em>, <em>Descripción</em>, <em>Habilidades</em>, <em>Experiencia</em>, <em>Idiomas</em>, <em>Lenguajes Técnicos</em>.
+            O importa desde un archivo. Formatos soportados: <em>Excel (.xlsx, .xls)</em>, <em>CSV (.csv)</em>, <em>Word (.docx, .doc)</em>, <em>PDF (.pdf)</em>.
+            Para Excel y CSV el archivo debe tener columnas como
+            <em>Título</em>, <em>Descripción</em>, <em>Habilidades</em>, <em>Experiencia</em>, <em>Idiomas</em>.
+            Word y PDF se importan como texto libre.
           </p>
-          <label for="jd-excel-input" style="display:inline-block; padding:6px 14px; border:1px solid #888; border-radius:4px; cursor:pointer; font-size:0.9rem; background:#f5f5f5;">
-            Seleccionar archivo Excel
+          <label for="jd-file-input" style="display:inline-block; padding:6px 14px; border:1px solid #888; border-radius:4px; cursor:pointer; font-size:0.9rem; background:#f5f5f5;">
+            Seleccionar archivo
           </label>
-          <input type="file" id="jd-excel-input" accept=".xlsx,.xls" style="display:none;" />
-          <span id="jd-excel-status" style="margin-left:10px; font-size:0.85rem; color:#555;"></span>
+          <input type="file" id="jd-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc" style="display:none;" />
+          <span id="jd-import-status" style="margin-left:10px; font-size:0.85rem; color:#555;"></span>
         </div>
       </div>
     </section>

@@ -4,13 +4,19 @@
 import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn } from '../../src/storage/storage';
 import type { JobDescription, Skill } from '../../src/storage/schema';
 import * as XLSX from 'xlsx';
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { anthropicComplete } from '../../src/scorer/anthropic';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 // ---- Anthropic API Key ----
 
 async function updateClaudeApiKeyIndicator(): Promise<void> {
   const indicator = document.getElementById('claude-api-key-indicator') as HTMLParagraphElement;
   const key = await getAnthropicApiKey();
-  indicator.textContent = key ? 'Anthropic API key saved' : 'No Anthropic API key saved';
+  indicator.textContent = key ? 'Clave API guardada' : 'No hay clave API guardada';
 }
 
 async function handleApiKeySave(): Promise<void> {
@@ -19,28 +25,28 @@ async function handleApiKeySave(): Promise<void> {
   const key = input.value.trim();
 
   if (!key) {
-    status.textContent = 'Please enter an API key';
+    status.textContent = 'Introduce una clave API';
     return;
   }
 
   await saveAnthropicApiKey(key);
-  status.textContent = 'Validating...';
+  status.textContent = 'Verificando...';
 
   const result = await browser.runtime.sendMessage({ type: 'VALIDATE_API_KEY' }) as { valid: boolean; error?: string };
 
   if (result.valid) {
-    status.textContent = 'Anthropic API key validated';
+    status.textContent = 'Clave API verificada correctamente';
     input.value = '';
     await updateClaudeApiKeyIndicator();
   } else {
-    status.textContent = `Validation failed: ${result.error ?? 'Unknown error'}`;
+    status.textContent = `Error al verificar: ${result.error ?? 'Error desconocido'}`;
   }
 }
 
 async function handleApiKeyClear(): Promise<void> {
   const status = document.getElementById('claude-api-key-status') as HTMLElement;
   await saveAnthropicApiKey('');
-  status.textContent = 'Anthropic API key cleared';
+  status.textContent = 'Clave API eliminada';
   await updateClaudeApiKeyIndicator();
 }
 
@@ -53,12 +59,12 @@ function buildSkillEditorHtml(jd: JobDescription): string {
       <label style="display:inline; font-weight:normal;">
         <input type="radio" name="skill-${jd.id}-${i}-weight" value="mandatory"
           ${skill.weight === 'mandatory' ? 'checked' : ''} data-weight-jd="${jd.id}" data-weight-index="${i}">
-        Mandatory
+        Obligatoria
       </label>
       <label style="display:inline; font-weight:normal;">
         <input type="radio" name="skill-${jd.id}-${i}-weight" value="nice-to-have"
           ${skill.weight === 'nice-to-have' ? 'checked' : ''} data-weight-jd="${jd.id}" data-weight-index="${i}">
-        Nice-to-have
+        Valorable
       </label>
       <button data-remove-skill="${i}" data-jd-id="${jd.id}">×</button>
     </div>
@@ -66,16 +72,16 @@ function buildSkillEditorHtml(jd: JobDescription): string {
 
   return `
     <details>
-      <summary>Edit Skills (${jd.skills.length})</summary>
+      <summary>Editar habilidades (${jd.skills.length})</summary>
       <div class="skill-list-editor" data-jd-id="${jd.id}">
-        ${skillRows || '<p style="color:#888; font-size:0.85em;">No skills added yet.</p>'}
+        ${skillRows || '<p style="color:#888; font-size:0.85em;">Todavía no hay habilidades.</p>'}
         <div class="add-skill-form">
-          <input type="text" class="skill-text-input" placeholder="e.g. TypeScript">
+          <input type="text" class="skill-text-input" placeholder="p. ej. TypeScript">
           <select class="skill-weight-select">
-            <option value="mandatory">Mandatory</option>
-            <option value="nice-to-have">Nice-to-have</option>
+            <option value="mandatory">Obligatoria</option>
+            <option value="nice-to-have">Valorable</option>
           </select>
-          <button class="add-skill-btn" data-jd-id="${jd.id}">Add Skill</button>
+          <button class="add-skill-btn" data-jd-id="${jd.id}">Añadir</button>
         </div>
       </div>
     </details>
@@ -88,7 +94,7 @@ async function renderJdList(): Promise<void> {
   list.innerHTML = '';
 
   if (jds.length === 0) {
-    list.innerHTML = '<li><em>No job descriptions saved yet.</em></li>';
+    list.innerHTML = '<li><em>Aún no hay ofertas guardadas.</em></li>';
     await renderActiveJdSelector();
     return;
   }
@@ -98,8 +104,8 @@ async function renderJdList(): Promise<void> {
     li.innerHTML = `
       <div class="jd-item-header">
         <strong>${jd.title}</strong>
-        <span style="color:#666; font-size:0.85em;">(${jd.skills.length} skills)</span>
-        <button data-delete-jd="${jd.id}">Delete</button>
+        <span style="color:#666; font-size:0.85em;">(${jd.skills.length} habilidades)</span>
+        <button data-delete-jd="${jd.id}">Eliminar</button>
       </div>
       ${buildSkillEditorHtml(jd)}
     `;
@@ -140,7 +146,7 @@ async function renderActiveJdSelector(): Promise<void> {
   const activeId = await getActiveJdId();
 
   if (jds.length === 0) {
-    container.innerHTML = '<p><em>Add at least one job description above.</em></p>';
+    container.innerHTML = '<p><em>Añade al menos una oferta arriba.</em></p>';
     return;
   }
 
@@ -158,7 +164,7 @@ async function renderActiveJdSelector(): Promise<void> {
   });
 }
 
-// ---- Excel JD Import ----
+// ---- File JD Import ----
 
 // Maps any column name variant → canonical field key
 const COL_ALIASES: Record<string, string> = {
@@ -195,78 +201,274 @@ function splitSkills(raw: string, weight: Skill['weight']): Skill[] {
     .map(text => ({ text, weight }));
 }
 
-async function handleExcelImport(file: File): Promise<void> {
-  const statusEl = document.getElementById('jd-excel-status') as HTMLElement;
+// ---- Skill extraction from free-form text ----
+
+async function extractSkillsFromText(rawText: string): Promise<Skill[]> {
+  // Prefer Claude when an API key is available — much more reliable than regex
+  const apiKey = await getAnthropicApiKey();
+  if (apiKey) {
+    const skills = await extractSkillsWithClaude(apiKey, rawText);
+    if (skills.length > 0) return skills;
+  }
+  // Fallback: simple heuristic extraction (works without API key)
+  return extractSkillsHeuristic(rawText);
+}
+
+async function extractSkillsWithClaude(apiKey: string, rawText: string): Promise<Skill[]> {
+  // Truncate to avoid hitting token limits — first 3000 chars usually contain the key info
+  const excerpt = rawText.slice(0, 3000);
+  const prompt = [
+    'You are analyzing a job description. Extract all skills and technologies mentioned.',
+    '',
+    'Job description:',
+    excerpt,
+    '',
+    'Respond with ONLY valid JSON — no explanation, no markdown fences:',
+    '{"mandatory": ["skill1", "skill2"], "nice_to_have": ["skill3"]}',
+    '',
+    'mandatory: required skills, must-have, core competencies',
+    'nice_to_have: preferred skills, bonus, deseable, se valora, a plus',
+    'Keep each skill short (1-5 words). Include languages, frameworks, tools, technologies, methodologies.',
+    'Return empty arrays if a category has no skills.',
+  ].join('\n');
+
+  const result = await anthropicComplete(apiKey, prompt);
+  if (result.error || !result.text) return [];
+
+  try {
+    const start = result.text.indexOf('{');
+    const end = result.text.lastIndexOf('}');
+    if (start === -1 || end === -1) return [];
+    const parsed = JSON.parse(result.text.slice(start, end + 1)) as {
+      mandatory?: string[];
+      nice_to_have?: string[];
+    };
+    const skills: Skill[] = [
+      ...(parsed.mandatory ?? []).map(text => ({ text, weight: 'mandatory' as Skill['weight'] })),
+      ...(parsed.nice_to_have ?? []).map(text => ({ text, weight: 'nice-to-have' as Skill['weight'] })),
+    ];
+    return skills.filter(s => s.text.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function extractSkillsHeuristic(text: string): Skill[] {
+  const skills: Skill[] = [];
+  const seen = new Set<string>();
+
+  const addSkill = (raw: string, weight: Skill['weight']) => {
+    const t = raw.trim().replace(/[.:;,*•·–—]+$/, '').trim();
+    if (t.length < 2 || t.length > 60) return;
+    const key = t.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    skills.push({ text: t, weight });
+  };
+
+  const isMandatoryHeader = (s: string) =>
+    /\b(requirements?|requisitos?|must.have|obligatorio|requerido|hard.skills?|technical.skills?|habilidades|competencias|tech.?stack|stack.t[eé]cnico|technologies|tecnolog[ií]as?|required)\b/i.test(s);
+  const isNiceToHaveHeader = (s: string) =>
+    /\b(nice.to.have|preferred|bonus|plus|deseable|valorable|se.valora|a.plus|advantageous)\b/i.test(s);
+  const isNonSkillHeader = (s: string) =>
+    /\b(responsabilidades|responsibilities|ofrecemos|benefits?|beneficios?|salary|salario|apply|empresa|company)\b/i.test(s);
+
+  const lines = text.split(/\r?\n/);
+  let currentWeight: Skill['weight'] = 'mandatory';
+  let inSkillSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (isMandatoryHeader(trimmed)) { currentWeight = 'mandatory'; inSkillSection = true; continue; }
+    if (isNiceToHaveHeader(trimmed)) { currentWeight = 'nice-to-have'; inSkillSection = true; continue; }
+    if (isNonSkillHeader(trimmed)) { inSkillSection = false; continue; }
+    if (!inSkillSection) continue;
+
+    const lineWeight: Skill['weight'] = isNiceToHaveHeader(trimmed) ? 'nice-to-have' : currentWeight;
+
+    const bulletMatch = trimmed.match(/^(?:[-*•·✓→►▪]|\d+[.)]) +(.+)$/);
+    if (bulletMatch) {
+      const item = bulletMatch[1].trim();
+      if (item.split(' ').length <= 6) addSkill(item, lineWeight);
+      continue;
+    }
+
+    if ((trimmed.includes(',') || trimmed.includes(';')) && !trimmed.endsWith('.')) {
+      const parts = trimmed.split(/[,;]\s*/);
+      if (parts.length >= 2 && parts.every(p => p.trim().split(' ').length <= 5)) {
+        parts.forEach(p => addSkill(p, lineWeight));
+        continue;
+      }
+    }
+
+    if (trimmed.split(' ').length <= 4 && !/[.?!]$/.test(trimmed)) addSkill(trimmed, lineWeight);
+  }
+
+  return skills;
+}
+
+async function handleSpreadsheetImport(file: File, statusEl: HTMLElement): Promise<void> {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
+
+  if (rows.length === 0) {
+    statusEl.textContent = 'El archivo está vacío o no tiene el formato esperado.';
+    return;
+  }
+
+  let imported = 0;
+  let lastJdId: string | null = null;
+
+  for (const row of rows) {
+    const f: Record<string, string> = {};
+    for (const [key, value] of Object.entries(row)) {
+      const canonical = normalizeColName(key);
+      if (canonical !== 'other') {
+        f[canonical] = String(value).trim();
+      }
+    }
+
+    // Build title: "Seniority Position Title" when both present
+    const baseTitle = f['title'] || file.name.replace(/\.(xlsx|xls|csv)$/i, '');
+    if (!baseTitle) continue;
+    const title = f['seniority'] ? `${f['seniority']} ${baseTitle}` : baseTitle;
+
+    // Skills: primary → mandatory, preferred + tools → nice-to-have
+    const skills: Skill[] = [
+      ...splitSkills(f['primary_skills'] ?? '', 'mandatory'),
+      ...splitSkills(f['preferred_skills'] ?? '', 'nice-to-have'),
+      ...splitSkills(f['tools'] ?? '', 'nice-to-have'),
+    ];
+
+    // rawText: use job description if present, otherwise summarise fields
+    const parts: string[] = [];
+    if (f['description']) parts.push(f['description']);
+    else {
+      if (f['primary_skills']) parts.push(`Habilidades requeridas: ${f['primary_skills']}`);
+      if (f['preferred_skills']) parts.push(`Habilidades valoradas: ${f['preferred_skills']}`);
+      if (f['tools']) parts.push(`Herramientas: ${f['tools']}`);
+      if (f['experience']) parts.push(`Experiencia mínima: ${f['experience']} años`);
+      if (f['languages']) parts.push(`Idiomas: ${f['languages']}`);
+    }
+    const rawText = parts.join('\n\n');
+
+    const jdId = crypto.randomUUID();
+    await saveJd({
+      id: jdId,
+      title,
+      rawText,
+      skills,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    lastJdId = jdId;
+    imported++;
+  }
+
+  if (lastJdId) {
+    await setActiveJdId(lastJdId);
+    statusEl.textContent = `${imported} oferta(s) importada(s). Última activada.`;
+  } else {
+    statusEl.textContent = 'No se encontraron filas válidas en el archivo.';
+  }
+
+  await renderJdList();
+}
+
+async function handleWordImport(file: File, statusEl: HTMLElement): Promise<void> {
+  const buffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+  const rawText = result.value.trim();
+
+  if (!rawText) {
+    statusEl.textContent = 'El documento Word está vacío o no se pudo leer el texto.';
+    return;
+  }
+
+  const skills = await extractSkillsFromText(rawText);
+  const title = file.name.replace(/\.(docx|doc)$/i, '');
+  const jdId = crypto.randomUUID();
+  await saveJd({
+    id: jdId,
+    title,
+    rawText,
+    skills,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+  await setActiveJdId(jdId);
+  statusEl.textContent = `Oferta importada desde Word. ${skills.length} habilidad(es) detectada(s). Activada.`;
+  await renderJdList();
+}
+
+async function handlePdfImport(file: File, statusEl: HTMLElement): Promise<void> {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+  const textParts: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+
+    // Group text items by Y position to reconstruct lines
+    const byY = new Map<number, string[]>();
+    for (const item of content.items) {
+      if (!('str' in item) || !item.str.trim()) continue;
+      const y = Math.round((item as { transform: number[] }).transform[5]);
+      if (!byY.has(y)) byY.set(y, []);
+      byY.get(y)!.push(item.str);
+    }
+    // Sort top-to-bottom (PDF Y coords are bottom-up, so descending = top-down)
+    const pageLines = [...byY.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([, parts]) => parts.join(' ').trim())
+      .filter(l => l.length > 0);
+    textParts.push(pageLines.join('\n'));
+  }
+
+  const rawText = textParts.join('\n\n').trim();
+
+  if (!rawText) {
+    statusEl.textContent = 'El PDF está vacío o no contiene texto extraíble.';
+    return;
+  }
+
+  const skills = await extractSkillsFromText(rawText);
+  const title = file.name.replace(/\.pdf$/i, '');
+  const jdId = crypto.randomUUID();
+  await saveJd({
+    id: jdId,
+    title,
+    rawText,
+    skills,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+  await setActiveJdId(jdId);
+  statusEl.textContent = `Oferta importada desde PDF. ${skills.length} habilidad(es) detectada(s). Activada.`;
+  await renderJdList();
+}
+
+async function handleFileImport(file: File): Promise<void> {
+  const statusEl = document.getElementById('jd-import-status') as HTMLElement;
   statusEl.textContent = 'Procesando...';
 
   try {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
 
-    if (rows.length === 0) {
-      statusEl.textContent = 'El archivo está vacío o no tiene el formato esperado.';
-      return;
-    }
-
-    let imported = 0;
-    let lastJdId: string | null = null;
-
-    for (const row of rows) {
-      const f: Record<string, string> = {};
-      for (const [key, value] of Object.entries(row)) {
-        const canonical = normalizeColName(key);
-        if (canonical !== 'other') {
-          f[canonical] = String(value).trim();
-        }
-      }
-
-      // Build title: "Seniority Position Title" when both present
-      const baseTitle = f['title'] || file.name.replace(/\.(xlsx|xls)$/i, '');
-      if (!baseTitle) continue;
-      const title = f['seniority'] ? `${f['seniority']} ${baseTitle}` : baseTitle;
-
-      // Skills: primary → mandatory, preferred + tools → nice-to-have
-      const skills: Skill[] = [
-        ...splitSkills(f['primary_skills'] ?? '', 'mandatory'),
-        ...splitSkills(f['preferred_skills'] ?? '', 'nice-to-have'),
-        ...splitSkills(f['tools'] ?? '', 'nice-to-have'),
-      ];
-
-      // rawText: use job description if present, otherwise summarise fields
-      const parts: string[] = [];
-      if (f['description']) parts.push(f['description']);
-      else {
-        if (f['primary_skills']) parts.push(`Habilidades requeridas: ${f['primary_skills']}`);
-        if (f['preferred_skills']) parts.push(`Habilidades valoradas: ${f['preferred_skills']}`);
-        if (f['tools']) parts.push(`Herramientas: ${f['tools']}`);
-        if (f['experience']) parts.push(`Experiencia mínima: ${f['experience']} años`);
-        if (f['languages']) parts.push(`Idiomas: ${f['languages']}`);
-      }
-      const rawText = parts.join('\n\n');
-
-      const jdId = crypto.randomUUID();
-      await saveJd({
-        id: jdId,
-        title,
-        rawText,
-        skills,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      lastJdId = jdId;
-      imported++;
-    }
-
-    if (lastJdId) {
-      await setActiveJdId(lastJdId);
-      statusEl.textContent = `${imported} oferta(s) importada(s). Última activada.`;
+    if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+      await handleSpreadsheetImport(file, statusEl);
+    } else if (ext === 'docx' || ext === 'doc') {
+      await handleWordImport(file, statusEl);
+    } else if (ext === 'pdf') {
+      await handlePdfImport(file, statusEl);
     } else {
-      statusEl.textContent = 'No se encontraron filas válidas en el archivo.';
+      statusEl.textContent = 'Formato no soportado. Usa Excel, CSV, Word o PDF.';
     }
-
-    await renderJdList();
   } catch (err) {
     statusEl.textContent = `Error al leer el archivo: ${err instanceof Error ? err.message : String(err)}`;
   }
@@ -278,7 +480,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Hide API key section when key is baked in at build time
   if (isApiKeyBuiltIn()) {
     const section = document.getElementById('claude-api-key-section') as HTMLElement;
-    section.innerHTML = '<h2>Claude API Key</h2><p style="color:#555; font-size:0.9rem;">API key is pre-configured.</p>';
+    section.innerHTML = '<h2>Clave API de Claude</h2><p style="color:#555; font-size:0.9rem;">Clave API preconfigurada.</p>';
   } else {
     await updateClaudeApiKeyIndicator();
     const claudeSaveBtn = document.getElementById('claude-api-key-save-btn') as HTMLButtonElement;
@@ -363,12 +565,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Excel import
-  const excelInput = document.getElementById('jd-excel-input') as HTMLInputElement;
-  excelInput?.addEventListener('change', async () => {
-    const file = excelInput.files?.[0];
+  // File import (Excel, CSV, Word, PDF)
+  const fileInput = document.getElementById('jd-file-input') as HTMLInputElement;
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
     if (!file) return;
-    await handleExcelImport(file);
-    excelInput.value = ''; // reset so same file can be re-selected
+    await handleFileImport(file);
+    fileInput.value = ''; // reset so same file can be re-selected
   });
 });

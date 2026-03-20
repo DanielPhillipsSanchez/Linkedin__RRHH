@@ -34,6 +34,9 @@ export interface CandidateRecord {
   linkedinHeadline: string;
   score: number;
   tier: 'L1' | 'L2' | 'L3' | 'rejected';
+  experienceLevel?: 'junior' | 'mid' | 'senior' | 'staff';
+  rationale?: string;
+  redFlags?: Array<{ flag: string; question: string; expectedAnswer: string }>;
   matchedSkills: string[];
   missingSkills: string[];
   outreachMessage: string;

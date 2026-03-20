@@ -1,6 +1,9 @@
 import type { CandidateRecord } from '../storage/schema';
 import { TIER_LABELS } from '../scorer/tiers';
 
+// Maximum number of red-flag question slots across all candidates in a batch
+const MAX_RED_FLAGS = 5;
+
 function escapeCsvField(value: string): string {
   if (value.includes('"') || value.includes(',') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -13,22 +16,38 @@ function formatDate(iso: string | undefined): string {
   return iso.substring(0, 10);
 }
 
-const HEADERS = [
-  'Name',
-  'Phone Number',
-  'Title',
-  'LinkedIn URL',
-  'Tier',
-  'Match Score (%)',
-  'Matched Skills',
-  'Missing Skills',
-  'Evaluation Date',
-  'Contact After',
-  'Outreach Message Sent',
-];
+function buildHeaders(redFlagCount: number): string[] {
+  const headers = [
+    'Nombre',
+    'Teléfono',
+    'Título',
+    'URL de LinkedIn',
+    'Nivel',
+    'Puntuación (%)',
+    'Habilidades coincidentes',
+    'Habilidades faltantes',
+    'Fecha de evaluación',
+    'Contactar después de',
+    'Mensaje enviado',
+  ];
+
+  for (let i = 1; i <= redFlagCount; i++) {
+    headers.push(`Pregunta de verificación ${i}`);
+    headers.push(`Respuesta esperada ${i}`);
+  }
+
+  return headers;
+}
 
 export function candidatesToCsv(candidates: CandidateRecord[]): string {
-  const rows: string[] = [HEADERS.map(escapeCsvField).join(',')];
+  // Determine max red flags across all candidates to size the columns
+  const maxFlags = Math.min(
+    MAX_RED_FLAGS,
+    candidates.reduce((max, c) => Math.max(max, c.redFlags?.length ?? 0), 0),
+  );
+
+  const headers = buildHeaders(maxFlags);
+  const rows: string[] = [headers.map(escapeCsvField).join(',')];
 
   for (const c of candidates) {
     const row = [
@@ -44,6 +63,14 @@ export function candidatesToCsv(candidates: CandidateRecord[]): string {
       c.tier === 'L3' ? formatDate(c.contactAfter) : '',
       c.messageSentText ?? '',
     ];
+
+    // Fill red-flag columns — pad with empty strings if this candidate has fewer
+    for (let i = 0; i < maxFlags; i++) {
+      const rf = c.redFlags?.[i];
+      row.push(rf ? rf.question : '');
+      row.push(rf ? rf.expectedAnswer : '');
+    }
+
     rows.push(row.map(escapeCsvField).join(','));
   }
 

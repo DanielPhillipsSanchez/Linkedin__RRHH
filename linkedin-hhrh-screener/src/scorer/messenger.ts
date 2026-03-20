@@ -62,7 +62,7 @@ export async function generateOutreachMessage(
   }
 
   if (!result.text) {
-    return { message: '', error: 'Empty response from Claude API' };
+    return { message: '', error: 'Respuesta vacía de la API de Claude' };
   }
 
   return { message: result.text };

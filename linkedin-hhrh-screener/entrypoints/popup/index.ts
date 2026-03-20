@@ -16,11 +16,11 @@ async function renderStorageUsage(): Promise<void> {
   if (!el) return;
   const bytes = await getStorageUsageBytes();
   if (bytes === 0) {
-    el.textContent = 'Storage: unavailable';
+    el.textContent = 'Almacenamiento: no disponible';
   } else {
     const usedKb = Math.round(bytes / 1024);
     const quotaMb = Math.round(STORAGE_QUOTA_BYTES / (1024 * 1024));
-    el.textContent = `Storage: ${usedKb} KB / ${quotaMb} MB`;
+    el.textContent = `Almacenamiento: ${usedKb} KB / ${quotaMb} MB`;
   }
 }
 
@@ -30,7 +30,7 @@ async function renderCandidateList(): Promise<void> {
 
   const candidates = await getAllCandidates();
   if (candidates.length === 0) {
-    listEl.textContent = 'No candidates yet';
+    listEl.textContent = 'Aún no hay candidatos';
     return;
   }
 
@@ -61,7 +61,7 @@ async function renderOverdueL3(): Promise<void> {
   );
 
   if (overdue.length === 0) {
-    el.textContent = 'No L3 candidates awaiting contact';
+    el.textContent = 'Sin candidatos L3 pendientes de contacto';
     return;
   }
 
@@ -69,7 +69,7 @@ async function renderOverdueL3(): Promise<void> {
   for (const c of overdue) {
     const li = document.createElement('li');
     const contactAfterDate = c.contactAfter!.substring(0, 10);
-    li.textContent = `${c.name} — contact window open since ${contactAfterDate}`;
+    li.textContent = `${c.name} — ventana de contacto abierta desde ${contactAfterDate}`;
     ul.appendChild(li);
   }
   el.innerHTML = '';
@@ -85,6 +85,7 @@ function showResult(result: EvaluateResult): void {
   const errorEl = document.getElementById('result-error')!;
   const tierEl = document.getElementById('result-tier')!;
   const scoreEl = document.getElementById('result-score')!;
+  const expLevelEl = document.getElementById('result-experience-level')!;
   const matchedEl = document.getElementById('result-matched-skills')!;
   const missingEl = document.getElementById('result-missing-skills')!;
   const rationaleEl = document.getElementById('result-rationale')!;
@@ -92,43 +93,87 @@ function showResult(result: EvaluateResult): void {
   errorEl.textContent = '';
   tierEl.textContent = '';
   scoreEl.textContent = '';
+  expLevelEl.textContent = '';
   matchedEl.innerHTML = '';
   missingEl.innerHTML = '';
   rationaleEl.textContent = '';
 
   if (result.error) {
-    errorEl.textContent = `Error: ${result.error}`;
+    errorEl.textContent = `Error: ${result.error}`; // keep "Error:" prefix as-is (universal term)
     return;
   }
 
   if (result.warning) {
-    errorEl.textContent = `Warning: ${result.warning}`;
+    errorEl.textContent = `Aviso: ${result.warning}`;
   }
 
   tierEl.textContent = result.tierLabel;
   tierEl.dataset.tier = result.tier;
 
-  scoreEl.textContent = `Match: ${result.score}%`;
+  scoreEl.textContent = `Encaje: ${result.score}%`;
+
+  if (result.experienceLevel) {
+    const LEVEL_LABELS: Record<string, string> = {
+      junior: 'Junior (<3 años)',
+      mid: 'Mid (3–6 años)',
+      senior: 'Senior (6–12 años)',
+      staff: 'Staff / Principal (12+ años)',
+    };
+    expLevelEl.textContent = `Nivel: ${LEVEL_LABELS[result.experienceLevel] ?? result.experienceLevel}`;
+    expLevelEl.dataset.level = result.experienceLevel;
+  }
 
   const matchedLabel = document.createElement('strong');
-  matchedLabel.textContent = 'Matched skills: ';
+  matchedLabel.textContent = 'Habilidades que encajan: ';
   matchedEl.appendChild(matchedLabel);
   matchedEl.appendChild(
     document.createTextNode(
-      result.matchedSkills.length > 0 ? result.matchedSkills.join(', ') : 'None'
+      result.matchedSkills.length > 0 ? result.matchedSkills.join(', ') : 'Ninguna'
     )
   );
 
   const missingLabel = document.createElement('strong');
-  missingLabel.textContent = 'Missing skills: ';
+  missingLabel.textContent = 'Habilidades que faltan: ';
   missingEl.appendChild(missingLabel);
   missingEl.appendChild(
     document.createTextNode(
-      result.missingSkills.length > 0 ? result.missingSkills.join(', ') : 'None'
+      result.missingSkills.length > 0 ? result.missingSkills.join(', ') : 'Ninguna'
     )
   );
 
   rationaleEl.textContent = result.rationale;
+
+  // Red flags section
+  const redFlagsSection = document.getElementById('red-flags-section') as HTMLElement;
+  const redFlagsList = document.getElementById('red-flags-list')!;
+  redFlagsList.innerHTML = '';
+
+  if (result.redFlags && result.redFlags.length > 0) {
+    redFlagsSection.hidden = false;
+    result.redFlags.forEach((rf) => {
+      const card = document.createElement('div');
+      card.className = 'red-flag-card';
+
+      const flagEl = document.createElement('p');
+      flagEl.className = 'red-flag-text';
+      flagEl.textContent = rf.flag;
+
+      const qLabel = document.createElement('p');
+      qLabel.className = 'red-flag-question';
+      qLabel.innerHTML = '<strong>Pregunta:</strong> ' + rf.question;
+
+      const aLabel = document.createElement('p');
+      aLabel.className = 'red-flag-answer';
+      aLabel.innerHTML = '<strong>Respuesta esperada:</strong> ' + rf.expectedAnswer;
+
+      card.appendChild(flagEl);
+      card.appendChild(qLabel);
+      card.appendChild(aLabel);
+      redFlagsList.appendChild(card);
+    });
+  } else {
+    redFlagsSection.hidden = true;
+  }
 
   currentCandidateId = result.candidateId;
 
@@ -156,7 +201,7 @@ function setMessageButtonsEnabled(enabled: boolean): void {
 document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('evaluate-btn') as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = 'Evaluating...';
+  btn.textContent = 'Evaluando...';
 
   try {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -172,7 +217,7 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
         missingSkills: [],
         rationale: '',
         candidateId: '',
-        error: 'Background service worker not ready — please reload the extension and try again',
+        error: 'El servicio en segundo plano no está listo — recarga la extensión y vuelve a intentarlo',
       });
     } else {
       showResult(result);
@@ -187,7 +232,7 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
     }
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Evaluate';
+    btn.textContent = 'Evaluar';
   }
 });
 
@@ -197,7 +242,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
   const btn = document.getElementById('generate-msg-btn') as HTMLButtonElement;
   const statusEl = document.getElementById('message-status')!;
   btn.disabled = true;
-  btn.textContent = 'Generating...';
+  btn.textContent = 'Generando...';
   statusEl.textContent = '';
 
   try {
@@ -210,7 +255,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
       (document.getElementById('message-textarea') as HTMLTextAreaElement).value = result.message;
       setMessageButtonsEnabled(true);
     } else {
-      statusEl.textContent = result?.error ?? 'Failed to generate message';
+      statusEl.textContent = result?.error ?? 'No se pudo generar el mensaje';
       statusEl.className = 'error-message';
     }
   } catch (err) {
@@ -218,7 +263,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
     statusEl.className = 'error-message';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generate Message';
+    btn.textContent = 'Redactar mensaje';
   }
 });
 
@@ -227,11 +272,11 @@ document.getElementById('copy-msg-btn')?.addEventListener('click', async () => {
   const statusEl = document.getElementById('message-status')!;
   try {
     await navigator.clipboard.writeText(textarea.value);
-    statusEl.textContent = 'Copied!';
+    statusEl.textContent = '¡Copiado!';
     statusEl.className = 'success-message';
     setTimeout(() => { statusEl.textContent = ''; }, 2000);
   } catch {
-    statusEl.textContent = 'Copy failed — please select and copy manually';
+    statusEl.textContent = 'No se pudo copiar — selecciona el texto y cópialo manualmente';
     statusEl.className = 'error-message';
   }
 });
@@ -255,11 +300,11 @@ document.getElementById('mark-sent-btn')?.addEventListener('click', async () => 
   }) as SaveMessageResult | undefined;
 
   if (result?.saved) {
-    statusEl.textContent = 'Message marked as sent';
+    statusEl.textContent = 'Mensaje marcado como enviado';
     statusEl.className = 'success-message';
     await renderCandidateList();
   } else {
-    statusEl.textContent = result?.error ?? 'Failed to save';
+    statusEl.textContent = result?.error ?? 'No se pudo guardar';
     statusEl.className = 'error-message';
   }
 });
@@ -286,8 +331,8 @@ document.getElementById('export-csv-btn')?.addEventListener('click', async () =>
   try {
     const candidates = await getAllCandidates();
     if (candidates.length === 0) {
-      btn.textContent = 'No candidates to export';
-      setTimeout(() => { btn.textContent = 'Export CSV'; btn.disabled = false; }, 2000);
+      btn.textContent = 'Sin candidatos para exportar';
+      setTimeout(() => { btn.textContent = 'Exportar CSV'; btn.disabled = false; }, 2000);
       return;
     }
     const csv = candidatesToCsv(candidates);
