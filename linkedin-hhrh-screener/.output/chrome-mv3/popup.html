@@ -3,17 +3,23 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HHRH Screener</title>
+    <title>EvolvrScreener</title>
     <meta name="manifest.type" content="browser_action">
-    <script type="module" crossorigin src="/chunks/popup-DLTxDPl_.js"></script>
-    <link rel="modulepreload" crossorigin href="/chunks/storage-ByVmRwmH.js">
-    <link rel="stylesheet" crossorigin href="/assets/popup-tYsAsf-t.css">
+    <script type="module" crossorigin src="/chunks/popup-CTZE_K7D.js"></script>
+    <link rel="modulepreload" crossorigin href="/chunks/storage-CbCm4PaD.js">
+    <link rel="stylesheet" crossorigin href="/assets/popup-DvM9euOf.css">
   </head>
   <body>
     <div id="app">
       <header>
-        <h1>HHRH Screener</h1>
-        <p><a id="settings-link" href="#">Ajustes</a></p>
+        <div class="header-brand">
+          <img src="./evolv-logo.png" alt="evolv" class="header-logo">
+          <h1>EvolvrScreener</h1>
+        </div>
+        <div class="header-actions">
+          <button id="lang-toggle-btn" type="button" class="lang-btn">EN</button>
+          <a id="settings-link" href="#">Ajustes</a>
+        </div>
       </header>
 
       <section id="evaluate-section">
@@ -21,22 +27,28 @@
       </section>
 
       <section id="result-section" hidden>
-        <div id="result-tier"></div>
-        <div id="result-score"></div>
-        <div id="result-experience-level"></div>
+        <div id="result-error" class="error-message"></div>
+        <div class="result-score-row">
+          <div id="score-donut" class="score-donut">
+            <span id="score-pct-label" class="score-pct-label"></span>
+          </div>
+          <div class="result-score-info">
+            <div id="result-tier"></div>
+            <div id="result-experience-level"></div>
+          </div>
+        </div>
         <div id="result-matched-skills"></div>
         <div id="result-missing-skills"></div>
         <div id="result-rationale"></div>
-        <div id="result-error" class="error-message"></div>
       </section>
 
       <section id="red-flags-section" hidden>
-        <h2>⚑ Alertas de perfil y preguntas para la entrevista</h2>
+        <h2 id="red-flags-title">⚑ Alertas de perfil y preguntas para la entrevista</h2>
         <div id="red-flags-list"></div>
       </section>
 
       <section id="message-section" hidden>
-        <h2>Mensaje de contacto</h2>
+        <h2 id="contact-message-title">Mensaje de contacto</h2>
         <button id="generate-msg-btn" type="button" disabled>Redactar mensaje</button>
         <textarea id="message-textarea" rows="6" placeholder="El mensaje aparecerá aquí..."></textarea>
         <div id="message-actions">
@@ -57,12 +69,12 @@
       </section>
 
       <section id="overdue-section">
-        <h2>Seguimientos pendientes (L3)</h2>
+        <h2 id="overdue-title">Seguimientos pendientes</h2>
         <div id="overdue-list">Cargando...</div>
       </section>
 
       <section id="history-section">
-        <h2>Candidatos recientes</h2>
+        <h2 id="history-title">Candidatos recientes</h2>
         <div id="candidate-list">Cargando...</div>
       </section>
     </div>
