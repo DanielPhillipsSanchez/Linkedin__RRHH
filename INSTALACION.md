@@ -134,8 +134,8 @@ Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta
 1. Abre LinkedIn en Chrome y navega al perfil de un candidato.
 2. Haz clic en el icono de la extension.
 3. Haz clic en **"Evaluate"** y espera unos segundos.
-4. La extension te mostrara el nivel del candidato (Layer 1, 2, 3 o Rechazado) y un resumen de sus habilidades.
-5. Cuando termines tu jornada, puedes exportar todos los candidatos del dia a un archivo Excel haciendo clic en **"Export CSV"**.
+4. La extension te mostrara el nivel del candidato (**Nivel 1, 2, 3 o Descartado**) y un resumen de sus habilidades, ademas de preguntas tecnicas sugeridas para la entrevista.
+5. Cuando termines tu jornada, puedes exportar todos los candidatos del dia a un archivo Excel haciendo clic en **"Export CSV"**. El archivo se descargara en espanol e incluye las habilidades, el puntaje y las preguntas de entrevista de cada candidato.
 6. Si quieres empezar de cero al dia siguiente, haz clic en **"Clear Candidates"** para limpiar la lista.
 
 ---
@@ -150,6 +150,9 @@ Ve a Settings y verifica que la clave de acceso este guardada correctamente.
 
 **La extension no detecta el perfil del candidato**
 Asegurate de estar en una URL de LinkedIn que tenga el formato `linkedin.com/in/nombre-del-candidato` y espera 2 segundos despues de que cargue la pagina.
+
+**El puntaje del candidato parece bajo aunque tiene buena experiencia**
+Verifica que las habilidades marcadas como **Mandatory** sean las realmente criticas del cargo. La extension da el 80% del puntaje a esas habilidades y las habilidades implicitas del rol (por ejemplo: numpy para un Data Scientist) se reconocen automaticamente aunque no esten listadas en el perfil.
 
 **Movi o elimine la carpeta `chrome-mv3` por error**
 Tendras que repetir los pasos 1 a 4 con una nueva copia de la carpeta.

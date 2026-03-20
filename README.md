@@ -131,17 +131,13 @@ Antes de evaluar candidatos, debes configurar dos cosas: tu clave de API y al me
 ### Exportar candidatos a CSV
 
 1. En el popup de la extension, haz clic en **"Export CSV"**
-2. Se descargara un archivo `hhrh-candidates-YYYY-MM-DD.csv` con las columnas:
-   - Nombre del candidato
-   - Titulo/Headline
-   - URL de LinkedIn
-   - Nivel (Layer 1/2/3/Rejected)
-   - Porcentaje de coincidencia
-   - Habilidades coincidentes (separadas por punto y coma)
-   - Habilidades faltantes (separadas por punto y coma)
-   - Fecha de evaluacion
-   - Fecha de contacto (solo para Layer 3, 7 dias despues de la evaluacion)
-   - Texto del mensaje de contacto enviado
+2. Se descargara un archivo `hhrh-candidates-YYYY-MM-DD.csv` en **espanol** con las columnas:
+   - Nombre, Telefono, Titulo, URL de LinkedIn
+   - Nivel (Nivel 1/2/3/Descartado) y Puntuacion (%)
+   - Habilidades coincidentes y faltantes (separadas por punto y coma)
+   - Fecha de evaluacion y fecha de contacto (solo para Nivel 3)
+   - Mensaje enviado
+   - **Preguntas de verificacion + Respuesta esperada** para cada red flag del candidato (columnas pares: Pregunta 1, Respuesta esperada 1, Pregunta 2, etc.)
 
 ---
 
@@ -149,17 +145,21 @@ Antes de evaluar candidatos, debes configurar dos cosas: tu clave de API y al me
 
 | Nivel | Rango | Significado | Accion recomendada |
 |-------|-------|-------------|-------------------|
-| **Layer 1** | 80% o mas | Excelente coincidencia | Contactar inmediatamente, prioridad alta |
-| **Layer 2** | 71% - 79% | Buena coincidencia | Contactar como segunda prioridad |
-| **Layer 3** | 60% - 70% | Coincidencia parcial | Contactar despues de 7 dias (dar prioridad a L1/L2) |
-| **Rejected** | Menos de 60% | No cumple requisitos minimos | No continuar con este candidato |
+| **Nivel 1 — Encaje alto** | 75% o mas | Excelente coincidencia | Contactar inmediatamente, prioridad alta |
+| **Nivel 2 — Buen encaje** | 63% - 74% | Buena coincidencia con alguna brecha menor | Contactar como segunda prioridad |
+| **Nivel 3 — Encaje parcial** | 50% - 62% | Coincidencia parcial, vale la pena explorar | Contactar despues de 7 dias (dar prioridad a N1/N2) |
+| **Descartado** | Menos de 50% | No cumple requisitos minimos | No continuar con este candidato |
 
 ### Como se calcula el puntaje
 
 1. **Coincidencia por palabras clave**: compara las habilidades del candidato con las del puesto (incluyendo substrings bidireccionales, ej: "React" coincide con "React.js")
-2. **Refinamiento con Claude AI**: para habilidades no coincidentes, Claude analiza el perfil completo para detectar sinonimos y experiencia implicita (ej: "Machine Learning" puede coincidir con experiencia en "Data Science")
-3. **Ponderacion**: las habilidades **Mandatory** tienen el doble de peso que las **Nice-to-have**
-4. **Calculo final**: `puntaje = (puntos obtenidos / puntos posibles) * 100`
+2. **Habilidades implicitas por rol**: Claude infiere habilidades estandar del rol aunque no esten listadas en el perfil. Por ejemplo, si el candidato trabaja como Data Scientist se asume que conoce numpy, pandas y scikit-learn aunque no aparezcan en su perfil de LinkedIn.
+3. **Refinamiento con Claude AI**: para habilidades no coincidentes, Claude analiza sinonimos, herramientas relacionadas y experiencia laboral.
+4. **Formula de dos cubos (80/20)**:
+   - Habilidades **Mandatory** → 80% del puntaje final
+   - Habilidades **Nice-to-have** → 20% del puntaje final
+   - Esto garantiza que un candidato que cumple todas las obligatorias siempre obtiene al menos 80%, independientemente de cuantas habilidades deseables tenga la oferta.
+5. **Resultado**: los umbrales son los mismos para cualquier tamano de JD (no hay penalizacion por ofertas con muchas habilidades).
 
 ---
 
@@ -169,9 +169,9 @@ La extension genera mensajes personalizados usando Claude AI. Cada nivel tiene u
 
 | Nivel | Tono del mensaje | Ejemplo de enfoque |
 |-------|-----------------|-------------------|
-| **Layer 1** | Directo y entusiasta | "Tu experiencia en X es exactamente lo que buscamos..." |
-| **Layer 2** | Exploratorio | "Me gustaria conocer mas sobre tu experiencia en..." |
-| **Layer 3** | Oportunidad futura | "Tenemos roles en desarrollo que podrian alinearse con tu perfil..." |
+| **Nivel 1** | Directo y entusiasta | "Tu experiencia en X es exactamente lo que buscamos..." |
+| **Nivel 2** | Exploratorio | "Me gustaria conocer mas sobre tu experiencia en..." |
+| **Nivel 3** | Oportunidad futura | "Tenemos roles en desarrollo que podrian alinearse con tu perfil..." |
 
 Los mensajes:
 - Usan el nombre del candidato
@@ -184,20 +184,25 @@ Los mensajes:
 
 ## Exportar candidatos a CSV
 
-El archivo CSV incluye toda la informacion necesaria para reportes y seguimiento:
+El archivo CSV esta completamente en espanol e incluye toda la informacion necesaria para reportes y seguimiento:
 
 | Columna | Descripcion |
 |---------|-------------|
-| Name | Nombre completo del candidato |
-| Title | Headline de LinkedIn |
-| LinkedIn URL | Enlace directo al perfil |
-| Tier | Nivel asignado (Layer 1, Layer 2, Layer 3, Rejected) |
-| Match Score (%) | Porcentaje de coincidencia |
-| Matched Skills | Habilidades que coinciden (separadas por `;`) |
-| Missing Skills | Habilidades obligatorias faltantes (separadas por `;`) |
-| Evaluation Date | Fecha de evaluacion (YYYY-MM-DD) |
-| Contact After | Fecha sugerida de contacto para Layer 3 (evaluacion + 7 dias) |
-| Outreach Message Sent | Texto del mensaje marcado como enviado |
+| Nombre | Nombre completo del candidato |
+| Telefono | Numero de telefono (si fue ingresado manualmente) |
+| Titulo | Headline de LinkedIn |
+| URL de LinkedIn | Enlace directo al perfil |
+| Nivel | Nivel asignado (Nivel 1 / 2 / 3 / Descartado) |
+| Puntuacion (%) | Porcentaje de coincidencia con la oferta |
+| Habilidades coincidentes | Skills que el candidato cumple (separadas por `;`) |
+| Habilidades faltantes | Skills obligatorias que no se encontraron (separadas por `;`) |
+| Fecha de evaluacion | Fecha en formato YYYY-MM-DD |
+| Contactar despues de | Fecha sugerida para Nivel 3 (evaluacion + 7 dias) |
+| Mensaje enviado | Texto del mensaje marcado como enviado |
+| Pregunta de verificacion N | Pregunta tecnica de entrevista para la alerta N |
+| Respuesta esperada N | Que responderia un candidato cualificado a esa pregunta |
+
+> Las columnas de preguntas y respuestas se generan dinamicamente: si el candidato tiene 3 red flags, apareceran 6 columnas adicionales (Pregunta 1, Respuesta 1, Pregunta 2, Respuesta 2, Pregunta 3, Respuesta 3).
 
 ---
 
@@ -290,8 +295,9 @@ La salida estara en `.output/chrome-mv3/`.
 ### El puntaje parece bajo
 
 - Verifica que las habilidades en la JD coincidan con los terminos que usa LinkedIn (ej: "JS" vs "JavaScript")
-- Recuerda que habilidades **Mandatory** pesan el doble
-- Claude AI resuelve sinonimos, pero no inventa habilidades que no estan en el perfil
+- Las habilidades **Mandatory** representan el 80% del puntaje — asegurate de marcarlas correctamente
+- Claude infiere habilidades tipicas del rol (ej: numpy para un Data Scientist) aunque no esten listadas, pero si el perfil no da ninguna pista del dominio tecnico, no las asume
+- Si la oferta tiene muchas habilidades Nice-to-have que el candidato no lista, el impacto es minimo gracias a la formula 80/20
 
 ### Donde se guardan los datos de los candidatos?
 
@@ -299,7 +305,7 @@ Todos los datos se almacenan localmente en `chrome.storage.local` (dentro de tu 
 
 ### Puedo usar la extension en Safari?
 
-La extension esta disenada para funcionar en Safari via Safari Web Extension (Xcode). Esta funcionalidad sera habilitada en una fase futura (Phase 6).
+Actualmente la extension esta disenada y validada para **Google Chrome**. La compatibilidad con Safari no esta en el alcance actual.
 
 ---
 
@@ -343,12 +349,13 @@ pnpm wxt build
 2. Espera 2 segundos
 3. Clic en el icono de la extension → clic **"Evaluate"**
 4. **Verificar**:
-   - [ ] Se muestra un **nivel** (Layer 1/2/3 o Rejected) con color
+   - [ ] Se muestra un **nivel** (Nivel 1/2/3 o Descartado) con color
    - [ ] Se muestra el **porcentaje** de coincidencia
-   - [ ] Se muestra lista de **Matched skills**
-   - [ ] Se muestra lista de **Missing skills**
+   - [ ] Se muestra lista de **habilidades coincidentes**
+   - [ ] Se muestra lista de **habilidades faltantes**
    - [ ] Se muestra la **justificacion** de Claude (texto en italica)
-   - [ ] El candidato aparece en **"Recent Candidates"** al fondo del popup
+   - [ ] Se muestran las **alertas de entrevista** (preguntas tecnicas) si hay red flags
+   - [ ] El candidato aparece en **"Candidatos recientes"** al fondo del popup
 
 ### Paso 4: Generar mensaje de contacto
 
@@ -380,10 +387,11 @@ pnpm wxt build
 1. En el popup, clic **"Export CSV"**
 2. **Verificar**:
    - [ ] Se descarga un archivo `hhrh-candidates-YYYY-MM-DD.csv`
-   - [ ] Abrirlo en Excel/Google Sheets — debe tener las columnas: Name, Title, LinkedIn URL, Tier, Match Score, Matched Skills, Missing Skills, Evaluation Date, Contact After, Outreach Message Sent
+   - [ ] Abrirlo en Excel/Google Sheets — las columnas deben estar en **espanol**: Nombre, Telefono, Titulo, URL de LinkedIn, Nivel, Puntuacion (%), Habilidades coincidentes, Habilidades faltantes, Fecha de evaluacion, Contactar despues de, Mensaje enviado
+   - [ ] Si el candidato tiene red flags, deben aparecer columnas adicionales: "Pregunta de verificacion 1", "Respuesta esperada 1", etc.
    - [ ] Los datos corresponden a los candidatos evaluados
-   - [ ] Si evaluaste un candidato L3, la columna "Contact After" tiene fecha (7 dias despues)
-   - [ ] Si marcaste un mensaje como enviado, el texto aparece en la ultima columna
+   - [ ] Si evaluaste un candidato Nivel 3, la columna "Contactar despues de" tiene fecha
+   - [ ] Si marcaste un mensaje como enviado, el texto aparece en la columna correspondiente
 
 ### Paso 7: Verificar errores controlados
 
