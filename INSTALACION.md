@@ -133,10 +133,13 @@ Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta
 
 1. Abre LinkedIn en Chrome y navega al perfil de un candidato.
 2. Haz clic en el icono de la extension.
-3. Haz clic en **"Evaluate"** y espera unos segundos.
+3. Haz clic en **"Evaluate"** — el boton se desactivara mientras procesa.
+   > **Tiempo de espera**: la evaluacion tarda entre **10 y 20 segundos**. Primero analiza las habilidades por palabras clave y luego consulta a la inteligencia artificial (Claude AI) para completar el analisis. **No hagas clic de nuevo** mientras esperas — el boton volvera a activarse solo cuando el resultado este listo.
 4. La extension te mostrara el nivel del candidato (**Nivel 1, 2, 3 o Descartado**) y un resumen de sus habilidades, ademas de preguntas tecnicas sugeridas para la entrevista.
-5. Cuando termines tu jornada, puedes exportar todos los candidatos del dia a un archivo Excel haciendo clic en **"Export CSV"**. El archivo se descargara en espanol e incluye las habilidades, el puntaje y las preguntas de entrevista de cada candidato.
-6. Si quieres empezar de cero al dia siguiente, haz clic en **"Clear Candidates"** para limpiar la lista.
+5. Si evaluaste un candidato que NO fue descartado, puedes hacer clic en **"Generate Message"** para generar un mensaje de contacto personalizado.
+   > **Tiempo de espera**: el mensaje tarda entre **5 y 10 segundos** en generarse. No hagas clic varias veces — espera a que aparezca el texto en la pantalla.
+6. Cuando termines tu jornada, puedes exportar todos los candidatos del dia a un archivo Excel haciendo clic en **"Export CSV"**. El archivo se descargara en espanol e incluye las habilidades, el puntaje y las preguntas de entrevista de cada candidato.
+7. Si quieres empezar de cero al dia siguiente, haz clic en **"Clear Candidates"** para limpiar la lista.
 
 ---
 

@@ -106,8 +106,8 @@ Antes de evaluar candidatos, debes configurar dos cosas: tu clave de API y al me
 1. **Navega a un perfil de LinkedIn** (ej: `linkedin.com/in/nombre-candidato`)
 2. Espera 1-2 segundos para que la extension extraiga los datos del perfil
 3. Haz clic en el **icono de la extension** en la barra de Chrome
-4. Haz clic en el boton **"Evaluate"**
-5. Espera unos segundos (la extension primero hace coincidencia por keywords, luego consulta a Claude AI para resolver sinonimos)
+4. Haz clic en el boton **"Evaluate"** — el boton se desactivara mientras procesa
+5. **Tiempo de espera: 10–20 segundos.** La extension primero hace coincidencia por keywords y luego consulta a Claude AI para resolver sinonimos e inferir habilidades implicitas. No hagas clic de nuevo mientras esperas — el resultado aparecera automaticamente.
 6. Veras el resultado:
    - **Nivel** (Layer 1, Layer 2, Layer 3 o Rejected) con color indicativo
    - **Porcentaje de coincidencia**
@@ -118,7 +118,7 @@ Antes de evaluar candidatos, debes configurar dos cosas: tu clave de API y al me
 ### Generar y enviar un mensaje de contacto
 
 1. Despues de evaluar (si el candidato NO es Rechazado), aparece la seccion **"Outreach Message"**
-2. Haz clic en **"Generate Message"** — Claude genera un mensaje personalizado segun el nivel:
+2. Haz clic en **"Generate Message"** — **Tiempo de espera: 5–10 segundos.** No hagas clic varias veces; el mensaje aparecera en el area de texto cuando este listo. Claude genera un mensaje personalizado segun el nivel:
    - **Layer 1**: tono directo y entusiasta
    - **Layer 2**: tono exploratorio
    - **Layer 3**: tono de oportunidad futura
@@ -362,7 +362,7 @@ pnpm wxt build
 *(Solo si el candidato NO fue Rejected)*
 
 1. Debe aparecer la seccion **"Outreach Message"** debajo del resultado
-2. Clic **"Generate Message"** → esperar 3-5 segundos
+2. Clic **"Generate Message"** → esperar 5–10 segundos (no hacer clic de nuevo mientras espera)
 3. **Verificar**:
    - [ ] Aparece un mensaje personalizado en el textarea
    - [ ] El mensaje menciona el nombre del candidato
