@@ -123,7 +123,7 @@ Si el build no tiene API key preconfigurada:
 
 - Haz clic en las banderas **🇨🇴 🇺🇸** en la esquina superior derecha del popup
 - La bandera del idioma activo aparece resaltada con un borde naranja oscuro
-- Al cambiar de idioma, el analisis y las alertas se traducen automaticamente (5–10 segundos)
+- Al cambiar de idioma, el analisis y las alertas se traducen automaticamente. **Este proceso puede tardar entre 15 y 20 segundos — no hagas clic en las banderas varias veces mientras esperas**, el resultado aparecera solo.
 - Si cierras y reabres el popup, el resultado guardado se muestra y puedes traducirlo sin volver a evaluar
 
 ### Generar y enviar un mensaje de contacto
@@ -173,7 +173,7 @@ La extension soporta **espanol** e **ingles** de forma completa:
 
 - El selector de idioma muestra las banderas 🇨🇴 (espanol) y 🇺🇸 (ingles) en el header del popup
 - La bandera del idioma activo aparece resaltada con un borde naranja oscuro
-- Cambiar de idioma traduce la interfaz, el analisis de Claude y las alertas de entrevista
+- Cambiar de idioma traduce la interfaz, el analisis de Claude y las alertas de entrevista. **La traduccion puede tardar entre 15 y 20 segundos — no hagas clic en las banderas varias veces mientras esperas.**
 - La evaluacion se genera en el idioma activo al momento de hacer clic en "Evaluar"
 - Si cierras el popup y lo vuelves a abrir en el mismo perfil, el resultado se restaura y puedes traducirlo sin necesidad de re-evaluar
 
@@ -387,7 +387,7 @@ pnpm wxt build
 2. **Verificar**:
    - [ ] La bandera de USA queda resaltada con borde naranja
    - [ ] La interfaz cambia a ingles
-   - [ ] El analisis y las alertas se traducen (5–10 segundos)
+   - [ ] El analisis y las alertas se traducen (15–20 segundos — no hacer clic varias veces en las banderas)
 3. Haz clic en la bandera 🇨🇴 para volver a espanol
 4. **Verificar**: el resultado original en espanol se restaura sin nueva llamada a la API
 

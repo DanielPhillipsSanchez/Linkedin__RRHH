@@ -104,6 +104,7 @@ Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta
    - **Descartado** — no cumple los requisitos minimos
 5. Si cierras el popup y lo vuelves a abrir en el mismo perfil, el resultado anterior se recupera automaticamente.
 6. Para cambiar el idioma de la interfaz y del analisis, haz clic en las banderas 🇨🇴 🇺🇸 en la esquina superior derecha del popup. La bandera del idioma activo aparece resaltada en naranja.
+   > **Tiempo de espera**: la traduccion puede tardar entre **15 y 20 segundos**. **No hagas clic en las banderas varias veces** mientras esperas — el resultado aparecera solo.
 7. Si el candidato no fue descartado, puedes hacer clic en **"Redactar mensaje"** para generar un mensaje de contacto personalizado.
    > **Tiempo de espera**: el mensaje tarda entre **5 y 10 segundos** en generarse. No hagas clic varias veces — espera a que aparezca el texto en la pantalla.
 8. Cuando termines tu jornada, exporta todos los candidatos del dia a un archivo Excel haciendo clic en **"Exportar CSV"**.
