@@ -77,6 +77,28 @@ even if not explicitly listed on their LinkedIn profile):
 If the candidate's role matches one of these profiles, include in impliedByExperience
 the skills from that list that are relevant to the role AND not yet detected.`.trim();
 
+const DATE_OVERLAP_RULE_ES = `
+REGLA FUNDAMENTAL — FECHAS DE LINKEDIN:
+LinkedIn solo muestra mes y año, nunca días exactos. Por eso:
+- Dos empleos que compartan el mismo mes (ej: uno termina en feb 2026 y el siguiente empieza en feb 2026)
+  son una transición normal; NO es un solapamiento.
+- Las fechas que aparentemente se solapan pueden reflejar: cambio de empresa en el mismo mes,
+  proyectos paralelos en la misma empresa, áreas distintas listadas en la descripción del cargo,
+  trabajo de consultoría simultáneo, o simplemente que LinkedIn redondea al mes.
+- NUNCA interpretes fechas solapadas como un problema o un red flag. Es información incompleta,
+  no evidencia de inconsistencia.`.trim();
+
+const DATE_OVERLAP_RULE_EN = `
+FUNDAMENTAL RULE — LINKEDIN DATES:
+LinkedIn only shows month and year, never exact days. Therefore:
+- Two jobs sharing the same month (e.g., one ending Feb 2026 and the next starting Feb 2026)
+  is a normal transition; it is NOT an overlap.
+- Apparently overlapping dates can reflect: a company change in the same month,
+  parallel projects at the same company, different areas listed in the job description,
+  simultaneous consulting work, or simply LinkedIn rounding to the month.
+- NEVER interpret overlapping dates as a problem or a red flag. It is incomplete information,
+  not evidence of inconsistency.`.trim();
+
 function buildPromptEs(profile: CandidateProfile, unmatchedSkills: Skill[], allJdSkills: Skill[]): string {
   const experienceList = profile.experience
     .map((e) => `  - ${e.title} en ${e.company}${e.duration ? ` (${e.duration})` : ''}`)
@@ -89,6 +111,8 @@ function buildPromptEs(profile: CandidateProfile, unmatchedSkills: Skill[], allJ
   return [
     'Eres una recruitera técnica senior evaluando un candidato. Analiza su perfil en profundidad.',
     'Responde siempre en español. Usa un tono directo y profesional, sin rodeos ni lenguaje corporativo.',
+    '',
+    DATE_OVERLAP_RULE_ES,
     '',
     '--- PERFIL DEL CANDIDATO ---',
     `Titular: ${profile.headline}`,
@@ -143,9 +167,6 @@ function buildPromptEs(profile: CandidateProfile, unmatchedSkills: Skill[], allJ
     '- Las preguntas deben ser técnicas y específicas para este perfil.',
     '- Sé directa y honesta — un falso positivo le cuesta tiempo y dinero a la empresa.',
     '- Todo el texto debe estar en español.',
-    '- IMPORTANTE sobre fechas: LinkedIn solo muestra mes y año, sin días exactos.',
-    '  Si dos empleos comparten el mismo mes (ej: uno termina en feb 2026 y el siguiente empieza en feb 2026),',
-    '  esto es una transición normal, NO un solapamiento. Nunca lo marques como red flag.',
     '',
     'Responde SOLO con JSON válido, sin bloques de código ni texto adicional:',
     '{"additionalMatches":[],"impliedByExperience":[],"experienceLevel":"mid","rationale":"...","redFlags":[{"flag":"...","question":"...","expectedAnswer":"..."}]}',
@@ -164,6 +185,8 @@ function buildPromptEn(profile: CandidateProfile, unmatchedSkills: Skill[], allJ
   return [
     'You are a senior technical recruiter evaluating a candidate. Analyze their profile in depth.',
     'Always respond in English. Use a direct and professional tone, no fluff or corporate speak.',
+    '',
+    DATE_OVERLAP_RULE_EN,
     '',
     '--- CANDIDATE PROFILE ---',
     `Headline: ${profile.headline}`,
@@ -218,9 +241,6 @@ function buildPromptEn(profile: CandidateProfile, unmatchedSkills: Skill[], allJ
     '- Questions must be technical and specific to this profile.',
     '- Be direct and honest — a false positive costs the company time and money.',
     '- All text must be in English.',
-    '- IMPORTANT about dates: LinkedIn only shows month and year, never exact days.',
-    '  If two jobs share the same month (e.g., one ends Feb 2026 and the next starts Feb 2026),',
-    '  this is a normal transition, NOT an overlap. Never flag it as a red flag.',
     '',
     'Respond ONLY with valid JSON, no code blocks or additional text:',
     '{"additionalMatches":[],"impliedByExperience":[],"experienceLevel":"mid","rationale":"...","redFlags":[{"flag":"...","question":"...","expectedAnswer":"..."}]}',
@@ -238,6 +258,8 @@ function buildAllMatchedPromptEs(profile: CandidateProfile, allJdSkills: Skill[]
   return [
     'Eres una recruitera técnica senior evaluando un candidato que ya cumple con todas las habilidades requeridas.',
     'Responde siempre en español. Usa un tono directo y profesional, sin rodeos ni lenguaje corporativo.',
+    '',
+    DATE_OVERLAP_RULE_ES,
     '',
     '--- PERFIL DEL CANDIDATO ---',
     `Titular: ${profile.headline}`,
@@ -271,9 +293,6 @@ function buildAllMatchedPromptEs(profile: CandidateProfile, allJdSkills: Skill[]
     '   - "expectedAnswer": qué respondería alguien con dominio real (conceptos y herramientas concretas)',
     '',
     '- Todo el texto debe estar en español.',
-    '- IMPORTANTE sobre fechas: LinkedIn solo muestra mes y año, sin días exactos.',
-    '  Si dos empleos comparten el mismo mes (ej: uno termina en feb 2026 y el siguiente empieza en feb 2026),',
-    '  esto es una transición normal, NO un solapamiento. Nunca lo marques como red flag.',
     '',
     'Responde SOLO con JSON válido, sin bloques de código ni texto adicional:',
     '{"experienceLevel":"senior","rationale":"...","redFlags":[{"flag":"...","question":"...","expectedAnswer":"..."}]}',
@@ -291,6 +310,8 @@ function buildAllMatchedPromptEn(profile: CandidateProfile, allJdSkills: Skill[]
   return [
     'You are a senior technical recruiter evaluating a candidate who already meets all required skills.',
     'Always respond in English. Use a direct and professional tone, no fluff or corporate speak.',
+    '',
+    DATE_OVERLAP_RULE_EN,
     '',
     '--- CANDIDATE PROFILE ---',
     `Headline: ${profile.headline}`,
@@ -324,9 +345,6 @@ function buildAllMatchedPromptEn(profile: CandidateProfile, allJdSkills: Skill[]
     '   - "expectedAnswer": what someone with real mastery would answer (concrete concepts and tools)',
     '',
     '- All text must be in English.',
-    '- IMPORTANT about dates: LinkedIn only shows month and year, never exact days.',
-    '  If two jobs share the same month (e.g., one ends Feb 2026 and the next starts Feb 2026),',
-    '  this is a normal transition, NOT an overlap. Never flag it as a red flag.',
     '',
     'Respond ONLY with valid JSON, no code blocks or additional text:',
     '{"experienceLevel":"senior","rationale":"...","redFlags":[{"flag":"...","question":"...","expectedAnswer":"..."}]}',

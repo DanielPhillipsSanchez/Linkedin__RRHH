@@ -47,5 +47,6 @@ export interface CandidateRecord {
   messageSentAt?: string;     // ISO 8601
   messageSentText?: string;
   phoneNumber?: string;       // manually entered by recruiter
+  evaluationLang?: 'es' | 'en'; // language in which rationale/redFlags were generated
   expiresAt: string;          // ISO 8601 — for GDPR cleanup
 }

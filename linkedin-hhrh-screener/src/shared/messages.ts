@@ -43,6 +43,8 @@ export interface EvaluateResult {
   error?: string;
   /** Non-fatal warning (e.g. Claude API error — score is keyword-only) */
   warning?: string;
+  /** Language in which rationale and redFlags were generated */
+  evaluationLang?: 'es' | 'en';
 }
 
 export interface GenerateMessageMessage {

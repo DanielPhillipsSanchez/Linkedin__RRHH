@@ -137,6 +137,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       experienceLevel: existing.experienceLevel,
       redFlags: existing.redFlags ?? [],
       candidateId: existing.id,
+      evaluationLang: existing.evaluationLang ?? 'es',
     };
   }
 
@@ -203,6 +204,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     contactAfter:
       tier === 'low' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
     jdId: jd.id,
+    evaluationLang: lang,
     expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
   };
 
@@ -226,6 +228,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     experienceLevel,
     redFlags,
     candidateId: record.id,
+    evaluationLang: lang,
     ...(claudeWarning ? { warning: claudeWarning } : {}),
   };
 }

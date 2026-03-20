@@ -1,4 +1,4 @@
-import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates, clearAllCandidates, getLang, setLang } from '../../src/storage/storage';
+import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates, clearAllCandidates, getLang, setLang, getActiveJdId } from '../../src/storage/storage';
 import type { EvaluateResult, GenerateMessageResult, SaveMessageResult, TranslateResultResult } from '../../src/shared/messages';
 import type { Lang } from '../../src/i18n';
 import { T } from '../../src/i18n';
@@ -373,7 +373,7 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
       });
     } else {
       originalResult = result;
-      originalResultLang = currentLang;
+      originalResultLang = result.evaluationLang ?? currentLang;
       showResult(result);
       await renderCandidateList();
     }
@@ -499,12 +499,57 @@ document.getElementById('export-csv-btn')?.addEventListener('click', async () =>
 
 // ---- Init ----
 
+async function restoreResultForCurrentTab(): Promise<void> {
+  try {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    const url = tab?.url;
+    if (!url || !url.includes('linkedin.com/in/')) return;
+
+    const activeJdId = await getActiveJdId();
+    const candidates = await getAllCandidates();
+
+    // Find the most recent evaluation for this URL, preferring the active JD
+    const match =
+      candidates.find((c) => c.profileUrl === url && c.jdId === activeJdId) ??
+      candidates.find((c) => c.profileUrl === url);
+
+    if (!match) return;
+
+    const tierLabels = getTierLabels(currentLang);
+    const restored: import('../../src/shared/messages').EvaluateResult = {
+      score: match.score,
+      tier: match.tier,
+      tierLabel: tierLabels[match.tier],
+      matchedSkills: match.matchedSkills,
+      missingSkills: match.missingSkills,
+      rationale: match.rationale ?? '',
+      experienceLevel: match.experienceLevel,
+      redFlags: match.redFlags ?? [],
+      candidateId: match.id,
+      evaluationLang: match.evaluationLang ?? 'es',
+    };
+
+    originalResult = restored;
+    originalResultLang = restored.evaluationLang!;
+    translatedResultCache = null;
+    currentProfileUrl = match.profileUrl;
+
+    // If the popup language differs from the evaluation language, show in eval language for now
+    // (user can toggle to translate — avoids an API call on every popup open)
+    lastResult = restored;
+    showResult(restored);
+  } catch {
+    // Non-critical — popup still works without restored result
+  }
+}
+
 async function init(): Promise<void> {
   currentLang = await getLang();
   applyStaticTranslations();
   await renderStorageUsage();
   await renderCandidateList();
   await renderOverdueLow();
+  await restoreResultForCurrentTab();
 }
 
 void init();
