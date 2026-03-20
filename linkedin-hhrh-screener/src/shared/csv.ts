@@ -1,5 +1,7 @@
 import type { CandidateRecord } from '../storage/schema';
-import { TIER_LABELS } from '../scorer/tiers';
+import type { Lang } from '../i18n';
+import { T } from '../i18n';
+import { getTierLabels } from '../scorer/tiers';
 
 // Maximum number of red-flag question slots across all candidates in a batch
 const MAX_RED_FLAGS = 5;
@@ -16,37 +18,40 @@ function formatDate(iso: string | undefined): string {
   return iso.substring(0, 10);
 }
 
-function buildHeaders(redFlagCount: number): string[] {
+function buildHeaders(redFlagCount: number, lang: Lang): string[] {
+  const t = T[lang];
   const headers = [
-    'Nombre',
-    'Teléfono',
-    'Título',
-    'URL de LinkedIn',
-    'Nivel',
-    'Puntuación (%)',
-    'Habilidades coincidentes',
-    'Habilidades faltantes',
-    'Fecha de evaluación',
-    'Contactar después de',
-    'Mensaje enviado',
+    t.csvName,
+    t.csvPhone,
+    t.csvTitle,
+    t.csvLinkedIn,
+    t.csvLevel,
+    t.csvScore,
+    t.csvMatched,
+    t.csvMissing,
+    t.csvEvalDate,
+    t.csvContactAfter,
+    t.csvMessageSent,
   ];
 
   for (let i = 1; i <= redFlagCount; i++) {
-    headers.push(`Pregunta de verificación ${i}`);
-    headers.push(`Respuesta esperada ${i}`);
+    headers.push(t.csvVerifyQ(i));
+    headers.push(t.csvExpectedA(i));
   }
 
   return headers;
 }
 
-export function candidatesToCsv(candidates: CandidateRecord[]): string {
+export function candidatesToCsv(candidates: CandidateRecord[], lang: Lang = 'es'): string {
+  const tierLabels = getTierLabels(lang);
+
   // Determine max red flags across all candidates to size the columns
   const maxFlags = Math.min(
     MAX_RED_FLAGS,
     candidates.reduce((max, c) => Math.max(max, c.redFlags?.length ?? 0), 0),
   );
 
-  const headers = buildHeaders(maxFlags);
+  const headers = buildHeaders(maxFlags, lang);
   const rows: string[] = [headers.map(escapeCsvField).join(',')];
 
   for (const c of candidates) {
@@ -55,12 +60,12 @@ export function candidatesToCsv(candidates: CandidateRecord[]): string {
       c.phoneNumber ?? '',
       c.linkedinHeadline,
       c.profileUrl,
-      TIER_LABELS[c.tier] ?? c.tier,
+      tierLabels[c.tier] ?? c.tier,
       String(c.score),
       c.matchedSkills.join('; '),
       c.missingSkills.join('; '),
       formatDate(c.evaluatedAt),
-      c.tier === 'L3' ? formatDate(c.contactAfter) : '',
+      c.tier === 'low' ? formatDate(c.contactAfter) : '',
       c.messageSentText ?? '',
     ];
 

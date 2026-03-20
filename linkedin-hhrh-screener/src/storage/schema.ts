@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   ANTHROPIC_API_KEY: 'settings:anthropicApiKey',
   ACTIVE_JD_ID: 'settings:activeJdId',
   DATA_RETENTION_DAYS: 'settings:dataRetentionDays',
+  LANGUAGE: 'settings:language',
   JD_INDEX: 'jd:index',
   jd: (id: string) => `jd:${id}` as const,
   candidate: (id: string) => `candidate:${id}` as const,
@@ -33,7 +34,7 @@ export interface CandidateRecord {
   profileUrl: string;
   linkedinHeadline: string;
   score: number;
-  tier: 'L1' | 'L2' | 'L3' | 'rejected';
+  tier: 'high' | 'medium' | 'low' | 'rejected';
   experienceLevel?: 'junior' | 'mid' | 'senior' | 'staff';
   rationale?: string;
   redFlags?: Array<{ flag: string; question: string; expectedAnswer: string }>;
@@ -41,7 +42,7 @@ export interface CandidateRecord {
   missingSkills: string[];
   outreachMessage: string;
   evaluatedAt: string;        // ISO 8601
-  contactAfter?: string;      // ISO 8601 — L3 only (evaluatedAt + 7 days)
+  contactAfter?: string;      // ISO 8601 — low only (evaluatedAt + 7 days)
   jdId: string;
   messageSentAt?: string;     // ISO 8601
   messageSentText?: string;

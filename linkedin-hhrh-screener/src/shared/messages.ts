@@ -7,7 +7,8 @@ export type MessageType =
   | 'EVALUATE'
   | 'GENERATE_MESSAGE'
   | 'SAVE_MESSAGE'
-  | 'SAVE_PHONE';
+  | 'SAVE_PHONE'
+  | 'TRANSLATE_RESULT';
 
 export interface ValidateApiKeyMessage {
   type: 'VALIDATE_API_KEY';
@@ -74,6 +75,20 @@ export interface SavePhoneMessage {
 export interface SavePhoneResult {
   saved: boolean;
   error?: string;
+}
+
+export interface TranslateResultMessage {
+  type: 'TRANSLATE_RESULT';
+  rationale: string;
+  redFlags: Array<{ flag: string; question: string; expectedAnswer: string }>;
+  targetLang: string;
+}
+
+export interface TranslateResultResult {
+  rationale: string;
+  redFlags: Array<{ flag: string; question: string; expectedAnswer: string }>;
+  error?: string;
+  translationFailed?: true;
 }
 
 export type ExtensionMessage =

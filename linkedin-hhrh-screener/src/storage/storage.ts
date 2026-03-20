@@ -4,6 +4,8 @@
 
 import { STORAGE_KEYS } from './schema';
 import type { JobDescription, CandidateRecord } from './schema';
+import type { Lang } from '../i18n';
+import { LANG_KEY } from '../i18n';
 
 // Storage quota constant — Chrome 113+ allows 10MB for local storage
 export const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024; // 10MB
@@ -27,6 +29,17 @@ export async function getAnthropicApiKey(): Promise<string | undefined> {
 /** True when the API key is baked in at build time and no manual entry is needed. */
 export function isApiKeyBuiltIn(): boolean {
   return !!import.meta.env.VITE_ANTHROPIC_API_KEY;
+}
+
+// ---- Language ----
+
+export async function getLang(): Promise<Lang> {
+  const result = await browser.storage.local.get(LANG_KEY);
+  return (result[LANG_KEY] as Lang | undefined) ?? 'es';
+}
+
+export async function setLang(lang: Lang): Promise<void> {
+  await browser.storage.local.set({ [LANG_KEY]: lang });
 }
 
 // ---- Job Descriptions ----

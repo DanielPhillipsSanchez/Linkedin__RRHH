@@ -2,7 +2,7 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   manifest: {
-    name: 'LinkedIn HHRH Screener',
+    name: 'LinkedIn evolvers',
     description: 'Evaluate LinkedIn candidates against job descriptions using AI scoring',
     version: '0.1.0',
     permissions: [

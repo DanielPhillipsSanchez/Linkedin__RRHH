@@ -1,12 +1,13 @@
-import { getAnthropicApiKey, getActiveJdId, getAllJds, getAllCandidates, saveCandidate, getCandidate } from '../src/storage/storage';
-import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult } from '../src/shared/messages';
+import { getAnthropicApiKey, getActiveJdId, getAllJds, getAllCandidates, saveCandidate, getCandidate, getLang } from '../src/storage/storage';
+import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult, TranslateResultResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
 import { runKeywordPass, computeScore } from '../src/scorer/scorer';
-import { assignTier, TIER_LABELS } from '../src/scorer/tiers';
-import { refineWithClaude } from '../src/scorer/claude';
+import { assignTier, getTierLabels } from '../src/scorer/tiers';
+import { refineWithClaude, translateEvaluation } from '../src/scorer/claude';
 import { generateOutreachMessage } from '../src/scorer/messenger';
 import { validateAnthropicApiKey } from '../src/scorer/anthropic';
+import { T } from '../src/i18n';
 
 let lastParsedProfile: { profile: CandidateProfile; health: ExtractionHealth } | null = null;
 
@@ -21,13 +22,13 @@ export function _setLastParsedProfileForTest(
   lastParsedProfile = value;
 }
 
-// SCHED-03: badge refresh — counts overdue uncontacted L3 candidates
+// SCHED-03: badge refresh — counts overdue uncontacted low candidates
 export async function refreshBadge(): Promise<void> {
   const candidates = await getAllCandidates();
   const now = Date.now();
   const overdueCount = candidates.filter(
     (c) =>
-      c.tier === 'L3' &&
+      c.tier === 'low' &&
       c.contactAfter !== undefined &&
       new Date(c.contactAfter).getTime() <= now &&
       !c.messageSentAt,
@@ -46,17 +47,21 @@ export async function validateStoredCredentials(): Promise<{ valid: boolean; err
 }
 
 export async function handleEvaluate(): Promise<EvaluateResult> {
+  const lang = await getLang();
+  const t = T[lang];
+  const tierLabels = getTierLabels(lang);
+
   const stored = getLastParsedProfile();
   if (!stored) {
     return {
       score: 0,
       tier: 'rejected',
-      tierLabel: TIER_LABELS['rejected'],
+      tierLabel: tierLabels['rejected'],
       matchedSkills: [],
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No hay datos del perfil — espera a que la página cargue del todo',
+      error: t.noProfileData,
     };
   }
 
@@ -65,12 +70,12 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     return {
       score: 0,
       tier: 'rejected',
-      tierLabel: TIER_LABELS['rejected'],
+      tierLabel: tierLabels['rejected'],
       matchedSkills: [],
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No hay clave API de Anthropic — añádela en Ajustes',
+      error: t.noApiKey,
     };
   }
 
@@ -79,12 +84,12 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     return {
       score: 0,
       tier: 'rejected',
-      tierLabel: TIER_LABELS['rejected'],
+      tierLabel: tierLabels['rejected'],
       matchedSkills: [],
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'No hay ninguna oferta activa — selecciona una en Ajustes',
+      error: t.noActiveJd,
     };
   }
 
@@ -94,24 +99,24 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     return {
       score: 0,
       tier: 'rejected',
-      tierLabel: TIER_LABELS['rejected'],
+      tierLabel: tierLabels['rejected'],
       matchedSkills: [],
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'La oferta activa no se encontró — vuelve a seleccionarla en Ajustes',
+      error: t.activeJdNotFound,
     };
   }
   if (jd.skills.length === 0) {
     return {
       score: 0,
       tier: 'rejected',
-      tierLabel: TIER_LABELS['rejected'],
+      tierLabel: tierLabels['rejected'],
       matchedSkills: [],
       missingSkills: [],
       rationale: '',
       candidateId: '',
-      error: 'La oferta activa no tiene habilidades — añádelas en Ajustes antes de evaluar',
+      error: t.noSkillsInJd,
     };
   }
 
@@ -125,7 +130,7 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     return {
       score: existing.score,
       tier: existing.tier,
-      tierLabel: TIER_LABELS[existing.tier],
+      tierLabel: tierLabels[existing.tier],
       matchedSkills: existing.matchedSkills,
       missingSkills: existing.missingSkills,
       rationale: existing.rationale ?? '',
@@ -154,25 +159,25 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
   let redFlags: CandidateRecord['redFlags'] = [];
   let claudeWarning: string | undefined;
 
-  const refined = await refineWithClaude(apiKey, profile, unmatchedSkills, jd.skills);
+  const refined = await refineWithClaude(apiKey, profile, unmatchedSkills, jd.skills, lang);
   additionalMatches = refined.additionalMatches;
   impliedByExperience = refined.impliedByExperience;
   experienceLevel = refined.experienceLevel;
   rationale = refined.rationale;
   redFlags = refined.redFlags;
   if (refined.claudeError === '401') {
-    claudeWarning = 'Error de autenticación con la API de Claude — actualiza tu clave en Ajustes. La puntuación mostrada es solo por palabras clave.';
+    claudeWarning = t.authError;
   } else if (refined.claudeError === 'network') {
-    claudeWarning = 'No se pudo conectar con la API de Claude — la puntuación es solo por palabras clave.';
+    claudeWarning = t.networkError;
   } else if (refined.claudeError) {
-    claudeWarning = `Error en la API de Claude: ${refined.claudeError} — puntuación solo por palabras clave.`;
+    claudeWarning = t.claudeApiError(refined.claudeError);
   }
 
   // Final matched set: keyword matches + Claude synonym matches + experience-implied matches
   const allMatchedTexts = new Set([...matchedSkills, ...additionalMatches, ...impliedByExperience]);
   const score = computeScore(jd.skills, allMatchedTexts);
   const tier = assignTier(score, jd.skills.length);
-  const tierLabel = TIER_LABELS[tier];
+  const tierLabel = tierLabels[tier];
 
   // Missing skills: mandatory skills not in final matched set
   const missingSkills = jd.skills
@@ -196,16 +201,16 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
     outreachMessage: '',
     evaluatedAt: now,
     contactAfter:
-      tier === 'L3' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+      tier === 'low' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
     jdId: jd.id,
     expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
   };
 
   await saveCandidate(record);
 
-  // SCHED-01: create 7-day follow-up alarm for Layer 3 candidates
+  // SCHED-01: create 7-day follow-up alarm for low candidates
   if (record.contactAfter) {
-    await browser.alarms.create(`l3-followup-${record.id}`, {
+    await browser.alarms.create(`low-followup-${record.id}`, {
       when: new Date(record.contactAfter).getTime(),
     });
   }
@@ -226,13 +231,16 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
 }
 
 export async function handleGenerateMessage(candidateId: string): Promise<GenerateMessageResult> {
-  const candidate = await getCandidate(candidateId);
-  if (!candidate) return { message: '', error: 'Candidato no encontrado' };
+  const lang = await getLang();
+  const t = T[lang];
 
-  if (candidate.tier === 'rejected') return { message: '', error: 'No se generan mensajes para candidatos descartados' };
+  const candidate = await getCandidate(candidateId);
+  if (!candidate) return { message: '', error: t.candidateNotFound };
+
+  if (candidate.tier === 'rejected') return { message: '', error: t.noMessageForRejected };
 
   const apiKey = await getAnthropicApiKey();
-  if (!apiKey) return { message: '', error: 'No hay clave API de Anthropic — configúrala en Ajustes' };
+  if (!apiKey) return { message: '', error: t.noApiKeyForMessage };
 
   const jds = await getAllJds();
   const jd = jds.find((j) => j.id === candidate.jdId);
@@ -256,6 +264,7 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
     candidate.matchedSkills,
     candidate.missingSkills,
     jdTitle,
+    lang,
   );
 
   if (result.message) {
@@ -267,8 +276,11 @@ export async function handleGenerateMessage(candidateId: string): Promise<Genera
 }
 
 export async function handleSaveMessage(candidateId: string, messageText: string): Promise<SaveMessageResult> {
+  const lang = await getLang();
+  const t = T[lang];
+
   const candidate = await getCandidate(candidateId);
-  if (!candidate) return { saved: false, error: 'Candidato no encontrado' };
+  if (!candidate) return { saved: false, error: t.candidateNotFound };
 
   candidate.messageSentText = messageText;
   candidate.messageSentAt = new Date().toISOString();
@@ -280,8 +292,11 @@ export async function handleSaveMessage(candidateId: string, messageText: string
 }
 
 export async function handleSavePhone(candidateId: string, phoneNumber: string): Promise<SavePhoneResult> {
+  const lang = await getLang();
+  const t = T[lang];
+
   const candidate = await getCandidate(candidateId);
-  if (!candidate) return { saved: false, error: 'Candidato no encontrado' };
+  if (!candidate) return { saved: false, error: t.candidateNotFound };
 
   candidate.phoneNumber = phoneNumber;
   await saveCandidate(candidate);
@@ -291,15 +306,21 @@ export async function handleSavePhone(candidateId: string, phoneNumber: string):
 
 // SCHED-02: alarm fire handler — exported for direct unit testability
 export async function handleAlarm(alarm: { name: string; scheduledTime: number }): Promise<void> {
-  if (!alarm.name.startsWith('l3-followup-')) return;
-  const candidateId = alarm.name.replace('l3-followup-', '');
+  if (!alarm.name.startsWith('low-followup-') && !alarm.name.startsWith('l3-followup-')) return;
+  const candidateId = alarm.name.replace('low-followup-', '').replace('l3-followup-', '');
   const candidate = await getCandidate(candidateId);
   if (!candidate || candidate.messageSentAt) return; // already contacted
+
+  const lang = await getLang();
+  const isEs = lang === 'es';
+
   await browser.notifications.create(`notif-${candidateId}`, {
     type: 'basic',
     iconUrl: browser.runtime.getURL('/icon/128.png'),
-    title: 'Seguimiento L3 pendiente',
-    message: `Es momento de contactar a ${candidate.name} — han pasado los 7 días de espera.`,
+    title: isEs ? 'Seguimiento pendiente' : 'Pending follow-up',
+    message: isEs
+      ? `Es momento de contactar a ${candidate.name} — han pasado los 7 días de espera.`
+      : `Time to contact ${candidate.name} — the 7-day window has passed.`,
   });
   await refreshBadge();
 }
@@ -343,6 +364,16 @@ export default defineBackground(() => {
 
     if (message.type === 'SAVE_PHONE') {
       handleSavePhone(message.candidateId, message.phoneNumber).then(sendResponse).catch((err) => sendResponse({ saved: false, error: (err as Error).message }));
+      return true;
+    }
+
+    if (message.type === 'TRANSLATE_RESULT') {
+      (async (): Promise<TranslateResultResult> => {
+        const apiKey = await getAnthropicApiKey();
+        if (!apiKey) return { rationale: message.rationale, redFlags: message.redFlags, error: 'no_key' };
+        const result = await translateEvaluation(apiKey, message.rationale, message.redFlags, message.targetLang as 'es' | 'en');
+        return result;
+      })().then(sendResponse).catch(() => sendResponse({ rationale: message.rationale, redFlags: message.redFlags, translationFailed: true }));
       return true;
     }
   });

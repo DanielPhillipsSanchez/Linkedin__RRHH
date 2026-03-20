@@ -1,8 +1,10 @@
 // entrypoints/options/index.ts
 // Options page controller — Anthropic API key + JD CRUD + skill editor + active JD
 
-import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn } from '../../src/storage/storage';
+import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn, getLang, setLang } from '../../src/storage/storage';
 import type { JobDescription, Skill } from '../../src/storage/schema';
+import type { Lang } from '../../src/i18n';
+import { T } from '../../src/i18n';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -11,12 +13,78 @@ import { anthropicComplete } from '../../src/scorer/anthropic';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
+let currentLang: Lang = 'es';
+
+function t() { return T[currentLang]; }
+
+// ---- Static translation ----
+
+function applyStaticTranslations(): void {
+  const tr = t();
+
+  // Page title
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle) pageTitle.textContent = tr.settingsTitle;
+
+  const heading = document.getElementById('settings-heading');
+  if (heading) heading.textContent = tr.settingsHeading;
+
+  const langBtn = document.getElementById('lang-toggle-btn') as HTMLButtonElement;
+  if (langBtn) langBtn.textContent = tr.langToggle;
+
+  // API key section
+  const apiKeyTitle = document.getElementById('api-key-section-title');
+  if (apiKeyTitle) apiKeyTitle.textContent = tr.apiKeySection;
+
+  const apiKeyDesc = document.getElementById('api-key-desc');
+  if (apiKeyDesc) apiKeyDesc.textContent = tr.apiKeyDesc;
+
+  const apiKeyLabel = document.getElementById('api-key-label');
+  if (apiKeyLabel) apiKeyLabel.textContent = tr.apiKeyLabel;
+
+  const saveBtn = document.getElementById('claude-api-key-save-btn');
+  if (saveBtn) saveBtn.textContent = tr.apiKeySaveBtn;
+
+  const clearBtn = document.getElementById('claude-api-key-clear-btn');
+  if (clearBtn) clearBtn.textContent = tr.apiKeyClearBtn;
+
+  // Active job section
+  const activeJobTitle = document.getElementById('active-job-title');
+  if (activeJobTitle) activeJobTitle.textContent = tr.activeJobSection;
+
+  const activeJobDesc = document.getElementById('active-job-desc');
+  if (activeJobDesc) activeJobDesc.textContent = tr.activeJobDesc;
+
+  // Jobs section
+  const jobsSectionTitle = document.getElementById('jobs-section-title');
+  if (jobsSectionTitle) jobsSectionTitle.textContent = tr.jobsSection;
+
+  // Add job form
+  const jobTitleLabel = document.getElementById('job-title-label');
+  if (jobTitleLabel) jobTitleLabel.textContent = tr.jobTitleLabel;
+
+  const jobRawTextLabel = document.getElementById('job-raw-text-label');
+  if (jobRawTextLabel) jobRawTextLabel.textContent = tr.jobRawTextLabel;
+
+  const jobRawTextInput = document.getElementById('jd-raw-text-input') as HTMLTextAreaElement;
+  if (jobRawTextInput) jobRawTextInput.placeholder = tr.jobRawTextPlaceholder;
+
+  const addJobBtn = document.getElementById('jd-add-btn');
+  if (addJobBtn) addJobBtn.textContent = tr.addJobBtn;
+
+  const importDesc = document.getElementById('import-desc');
+  if (importDesc) importDesc.innerHTML = tr.importDesc;
+
+  const selectFileLabel = document.getElementById('select-file-label');
+  if (selectFileLabel) selectFileLabel.textContent = tr.selectFile;
+}
+
 // ---- Anthropic API Key ----
 
 async function updateClaudeApiKeyIndicator(): Promise<void> {
   const indicator = document.getElementById('claude-api-key-indicator') as HTMLParagraphElement;
   const key = await getAnthropicApiKey();
-  indicator.textContent = key ? 'Clave API guardada' : 'No hay clave API guardada';
+  indicator.textContent = key ? t().apiKeySaved : t().apiKeyNone;
 }
 
 async function handleApiKeySave(): Promise<void> {
@@ -25,46 +93,47 @@ async function handleApiKeySave(): Promise<void> {
   const key = input.value.trim();
 
   if (!key) {
-    status.textContent = 'Introduce una clave API';
+    status.textContent = t().enterApiKey;
     return;
   }
 
   await saveAnthropicApiKey(key);
-  status.textContent = 'Verificando...';
+  status.textContent = t().verifying;
 
   const result = await browser.runtime.sendMessage({ type: 'VALIDATE_API_KEY' }) as { valid: boolean; error?: string };
 
   if (result.valid) {
-    status.textContent = 'Clave API verificada correctamente';
+    status.textContent = t().apiKeyVerified;
     input.value = '';
     await updateClaudeApiKeyIndicator();
   } else {
-    status.textContent = `Error al verificar: ${result.error ?? 'Error desconocido'}`;
+    status.textContent = t().verifyError(result.error ?? '');
   }
 }
 
 async function handleApiKeyClear(): Promise<void> {
   const status = document.getElementById('claude-api-key-status') as HTMLElement;
   await saveAnthropicApiKey('');
-  status.textContent = 'Clave API eliminada';
+  status.textContent = t().keyDeleted;
   await updateClaudeApiKeyIndicator();
 }
 
 // ---- Job Descriptions ----
 
 function buildSkillEditorHtml(jd: JobDescription): string {
+  const tr = t();
   const skillRows = jd.skills.map((skill, i) => `
     <div class="skill-row" data-skill-index="${i}">
       <span class="skill-text">${skill.text}</span>
       <label style="display:inline; font-weight:normal;">
         <input type="radio" name="skill-${jd.id}-${i}-weight" value="mandatory"
           ${skill.weight === 'mandatory' ? 'checked' : ''} data-weight-jd="${jd.id}" data-weight-index="${i}">
-        Obligatoria
+        ${tr.mandatory}
       </label>
       <label style="display:inline; font-weight:normal;">
         <input type="radio" name="skill-${jd.id}-${i}-weight" value="nice-to-have"
           ${skill.weight === 'nice-to-have' ? 'checked' : ''} data-weight-jd="${jd.id}" data-weight-index="${i}">
-        Valorable
+        ${tr.niceToHave}
       </label>
       <button data-remove-skill="${i}" data-jd-id="${jd.id}">×</button>
     </div>
@@ -72,16 +141,16 @@ function buildSkillEditorHtml(jd: JobDescription): string {
 
   return `
     <details>
-      <summary>Editar habilidades (${jd.skills.length})</summary>
+      <summary>${tr.editSkills} (${jd.skills.length})</summary>
       <div class="skill-list-editor" data-jd-id="${jd.id}">
-        ${skillRows || '<p style="color:#888; font-size:0.85em;">Todavía no hay habilidades.</p>'}
+        ${skillRows || `<p style="color:#888; font-size:0.85em;">${tr.noSkillsYet}</p>`}
         <div class="add-skill-form">
-          <input type="text" class="skill-text-input" placeholder="p. ej. TypeScript">
+          <input type="text" class="skill-text-input" placeholder="${tr.skillPlaceholder}">
           <select class="skill-weight-select">
-            <option value="mandatory">Obligatoria</option>
-            <option value="nice-to-have">Valorable</option>
+            <option value="mandatory">${tr.mandatory}</option>
+            <option value="nice-to-have">${tr.niceToHave}</option>
           </select>
-          <button class="add-skill-btn" data-jd-id="${jd.id}">Añadir</button>
+          <button class="add-skill-btn" data-jd-id="${jd.id}">${tr.addSkill}</button>
         </div>
       </div>
     </details>
@@ -94,7 +163,7 @@ async function renderJdList(): Promise<void> {
   list.innerHTML = '';
 
   if (jds.length === 0) {
-    list.innerHTML = '<li><em>Aún no hay ofertas guardadas.</em></li>';
+    list.innerHTML = `<li><em>${t().noJobsSaved}</em></li>`;
     await renderActiveJdSelector();
     return;
   }
@@ -104,8 +173,8 @@ async function renderJdList(): Promise<void> {
     li.innerHTML = `
       <div class="jd-item-header">
         <strong>${jd.title}</strong>
-        <span style="color:#666; font-size:0.85em;">(${jd.skills.length} habilidades)</span>
-        <button data-delete-jd="${jd.id}">Eliminar</button>
+        <span style="color:#666; font-size:0.85em;">(${jd.skills.length} ${t().skills})</span>
+        <button data-delete-jd="${jd.id}">${t().deleteJob}</button>
       </div>
       ${buildSkillEditorHtml(jd)}
     `;
@@ -146,7 +215,7 @@ async function renderActiveJdSelector(): Promise<void> {
   const activeId = await getActiveJdId();
 
   if (jds.length === 0) {
-    container.innerHTML = '<p><em>Añade al menos una oferta arriba.</em></p>';
+    container.innerHTML = `<p><em>${t().addJobFirst}</em></p>`;
     return;
   }
 
@@ -316,7 +385,7 @@ async function handleSpreadsheetImport(file: File, statusEl: HTMLElement): Promi
   const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' });
 
   if (rows.length === 0) {
-    statusEl.textContent = 'El archivo está vacío o no tiene el formato esperado.';
+    statusEl.textContent = t().emptyFile;
     return;
   }
 
@@ -371,9 +440,9 @@ async function handleSpreadsheetImport(file: File, statusEl: HTMLElement): Promi
 
   if (lastJdId) {
     await setActiveJdId(lastJdId);
-    statusEl.textContent = `${imported} oferta(s) importada(s). Última activada.`;
+    statusEl.textContent = t().importedJobs(imported);
   } else {
-    statusEl.textContent = 'No se encontraron filas válidas en el archivo.';
+    statusEl.textContent = t().noValidRows;
   }
 
   await renderJdList();
@@ -385,7 +454,7 @@ async function handleWordImport(file: File, statusEl: HTMLElement): Promise<void
   const rawText = result.value.trim();
 
   if (!rawText) {
-    statusEl.textContent = 'El documento Word está vacío o no se pudo leer el texto.';
+    statusEl.textContent = t().emptyWord;
     return;
   }
 
@@ -401,7 +470,7 @@ async function handleWordImport(file: File, statusEl: HTMLElement): Promise<void
     updatedAt: new Date().toISOString(),
   });
   await setActiveJdId(jdId);
-  statusEl.textContent = `Oferta importada desde Word. ${skills.length} habilidad(es) detectada(s). Activada.`;
+  statusEl.textContent = t().importedWord(skills.length);
   await renderJdList();
 }
 
@@ -433,7 +502,7 @@ async function handlePdfImport(file: File, statusEl: HTMLElement): Promise<void>
   const rawText = textParts.join('\n\n').trim();
 
   if (!rawText) {
-    statusEl.textContent = 'El PDF está vacío o no contiene texto extraíble.';
+    statusEl.textContent = t().emptyPdf;
     return;
   }
 
@@ -449,13 +518,13 @@ async function handlePdfImport(file: File, statusEl: HTMLElement): Promise<void>
     updatedAt: new Date().toISOString(),
   });
   await setActiveJdId(jdId);
-  statusEl.textContent = `Oferta importada desde PDF. ${skills.length} habilidad(es) detectada(s). Activada.`;
+  statusEl.textContent = t().importedPdf(skills.length);
   await renderJdList();
 }
 
 async function handleFileImport(file: File): Promise<void> {
   const statusEl = document.getElementById('jd-import-status') as HTMLElement;
-  statusEl.textContent = 'Procesando...';
+  statusEl.textContent = t().processing;
 
   try {
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
@@ -467,20 +536,42 @@ async function handleFileImport(file: File): Promise<void> {
     } else if (ext === 'pdf') {
       await handlePdfImport(file, statusEl);
     } else {
-      statusEl.textContent = 'Formato no soportado. Usa Excel, CSV, Word o PDF.';
+      statusEl.textContent = t().unsupportedFormat;
     }
   } catch (err) {
-    statusEl.textContent = `Error al leer el archivo: ${err instanceof Error ? err.message : String(err)}`;
+    statusEl.textContent = t().fileReadError(err instanceof Error ? err.message : String(err));
   }
+}
+
+// ---- Language toggle ----
+
+async function switchLanguage(): Promise<void> {
+  currentLang = currentLang === 'es' ? 'en' : 'es';
+  await setLang(currentLang);
+  applyStaticTranslations();
+  if (isApiKeyBuiltIn()) {
+    const section = document.getElementById('claude-api-key-section') as HTMLElement;
+    if (section) section.innerHTML = `<h2>${t().apiKeySection}</h2><p style="color:#555; font-size:0.9rem;">${t().apiKeyBuiltIn}</p>`;
+  }
+  await renderJdList();
+  await updateClaudeApiKeyIndicator();
 }
 
 // ---- Initialise ----
 
 document.addEventListener('DOMContentLoaded', async () => {
+  currentLang = await getLang();
+  applyStaticTranslations();
+
+  // Language toggle
+  document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+    void switchLanguage();
+  });
+
   // Hide API key section when key is baked in at build time
   if (isApiKeyBuiltIn()) {
     const section = document.getElementById('claude-api-key-section') as HTMLElement;
-    section.innerHTML = '<h2>Clave API de Claude</h2><p style="color:#555; font-size:0.9rem;">Clave API preconfigurada.</p>';
+    section.innerHTML = `<h2>${t().apiKeySection}</h2><p style="color:#555; font-size:0.9rem;">${t().apiKeyBuiltIn}</p>`;
   } else {
     await updateClaudeApiKeyIndicator();
     const claudeSaveBtn = document.getElementById('claude-api-key-save-btn') as HTMLButtonElement;

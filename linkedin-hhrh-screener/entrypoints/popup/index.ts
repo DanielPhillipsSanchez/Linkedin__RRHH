@@ -1,26 +1,89 @@
-import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates, clearAllCandidates } from '../../src/storage/storage';
-import type { EvaluateResult, GenerateMessageResult, SaveMessageResult } from '../../src/shared/messages';
-import { TIER_LABELS } from '../../src/scorer/tiers';
+import { getStorageUsageBytes, STORAGE_QUOTA_BYTES, getAllCandidates, clearAllCandidates, getLang, setLang } from '../../src/storage/storage';
+import type { EvaluateResult, GenerateMessageResult, SaveMessageResult, TranslateResultResult } from '../../src/shared/messages';
+import type { Lang } from '../../src/i18n';
+import { T } from '../../src/i18n';
+import { getTierLabels } from '../../src/scorer/tiers';
 import { candidatesToCsv, downloadCsv } from '../../src/shared/csv';
 
 let currentCandidateId: string | null = null;
 let currentProfileUrl: string | null = null;
+let currentLang: Lang = 'es';
+let lastResult: EvaluateResult | null = null;
+// The original evaluation result, always in the evaluation language — never overwritten
+let originalResult: EvaluateResult | null = null;
+let originalResultLang: Lang = 'es';
+// Cache of the translated version (the non-original language) to avoid redundant API calls
+let translatedResultCache: EvaluateResult | null = null;
 
-document.getElementById('settings-link')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  browser.runtime.openOptionsPage();
-});
+// ---- Translation helpers ----
+
+function t() { return T[currentLang]; }
+
+function applyStaticTranslations(): void {
+  const tr = t();
+
+  // Header
+  const settingsLink = document.getElementById('settings-link');
+  if (settingsLink) settingsLink.textContent = tr.settings;
+
+  const langBtn = document.getElementById('lang-toggle-btn') as HTMLButtonElement;
+  if (langBtn) langBtn.textContent = tr.langToggle;
+
+  // Evaluate button — only if not in loading state
+  const evalBtn = document.getElementById('evaluate-btn') as HTMLButtonElement;
+  if (evalBtn && !evalBtn.disabled) evalBtn.textContent = tr.evaluate;
+
+  // Red flags title
+  const rfTitle = document.getElementById('red-flags-title');
+  if (rfTitle) rfTitle.textContent = tr.redFlagsTitle;
+
+  // Message section
+  const contactTitle = document.getElementById('contact-message-title');
+  if (contactTitle) contactTitle.textContent = tr.contactMessage;
+
+  const generateBtn = document.getElementById('generate-msg-btn') as HTMLButtonElement;
+  if (generateBtn && !generateBtn.disabled) generateBtn.textContent = tr.draftMessage;
+
+  const msgTextarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
+  if (msgTextarea) msgTextarea.placeholder = tr.messagePlaceholder;
+
+  const copyBtn = document.getElementById('copy-msg-btn') as HTMLButtonElement;
+  if (copyBtn) copyBtn.textContent = tr.copy;
+
+  const linkedinBtn = document.getElementById('open-linkedin-btn') as HTMLButtonElement;
+  if (linkedinBtn) linkedinBtn.textContent = tr.openLinkedIn;
+
+  const markSentBtn = document.getElementById('mark-sent-btn') as HTMLButtonElement;
+  if (markSentBtn) markSentBtn.textContent = tr.markSent;
+
+  // Export section
+  const exportBtn = document.getElementById('export-csv-btn') as HTMLButtonElement;
+  if (exportBtn && !exportBtn.disabled) exportBtn.textContent = tr.exportCsv;
+
+  const clearBtn = document.getElementById('clear-candidates-btn') as HTMLButtonElement;
+  if (clearBtn && !clearBtn.disabled) clearBtn.textContent = tr.clearCandidates;
+
+  // Overdue section
+  const overdueTitle = document.getElementById('overdue-title');
+  if (overdueTitle) overdueTitle.textContent = tr.pendingFollowUps;
+
+  // History section
+  const historyTitle = document.getElementById('history-title');
+  if (historyTitle) historyTitle.textContent = tr.recentCandidates;
+}
+
+// ---- Storage rendering ----
 
 async function renderStorageUsage(): Promise<void> {
   const el = document.getElementById('storage-usage');
   if (!el) return;
   const bytes = await getStorageUsageBytes();
   if (bytes === 0) {
-    el.textContent = 'Almacenamiento: no disponible';
+    el.textContent = t().storageNotAvailable;
   } else {
     const usedKb = Math.round(bytes / 1024);
     const quotaMb = Math.round(STORAGE_QUOTA_BYTES / (1024 * 1024));
-    el.textContent = `Almacenamiento: ${usedKb} KB / ${quotaMb} MB`;
+    el.textContent = t().storageUsage(usedKb, quotaMb);
   }
 }
 
@@ -30,15 +93,16 @@ async function renderCandidateList(): Promise<void> {
 
   const candidates = await getAllCandidates();
   if (candidates.length === 0) {
-    listEl.textContent = 'Aún no hay candidatos';
+    listEl.textContent = t().noCandidatesYet;
     return;
   }
 
+  const tierLabels = getTierLabels(currentLang);
   const ul = document.createElement('ul');
   for (const c of candidates) {
     const li = document.createElement('li');
     const dateOnly = c.evaluatedAt.substring(0, 10);
-    const label = TIER_LABELS[c.tier] ?? c.tier;
+    const label = tierLabels[c.tier] ?? c.tier;
     li.textContent = `${c.name} — ${label} — ${c.score}% — ${dateOnly}`;
     ul.appendChild(li);
   }
@@ -46,7 +110,7 @@ async function renderCandidateList(): Promise<void> {
   listEl.appendChild(ul);
 }
 
-async function renderOverdueL3(): Promise<void> {
+async function renderOverdueLow(): Promise<void> {
   const el = document.getElementById('overdue-list');
   if (!el) return;
 
@@ -54,14 +118,14 @@ async function renderOverdueL3(): Promise<void> {
   const now = Date.now();
   const overdue = candidates.filter(
     (c) =>
-      c.tier === 'L3' &&
+      c.tier === 'low' &&
       c.contactAfter !== undefined &&
       new Date(c.contactAfter).getTime() <= now &&
       !c.messageSentAt,
   );
 
   if (overdue.length === 0) {
-    el.textContent = 'Sin candidatos L3 pendientes de contacto';
+    el.textContent = t().noPendingLow;
     return;
   }
 
@@ -69,14 +133,17 @@ async function renderOverdueL3(): Promise<void> {
   for (const c of overdue) {
     const li = document.createElement('li');
     const contactAfterDate = c.contactAfter!.substring(0, 10);
-    li.textContent = `${c.name} — ventana de contacto abierta desde ${contactAfterDate}`;
+    li.textContent = `${c.name} — ${t().contactWindowSince} ${contactAfterDate}`;
     ul.appendChild(li);
   }
   el.innerHTML = '';
   el.appendChild(ul);
 }
 
+// ---- Result rendering ----
+
 function showResult(result: EvaluateResult): void {
+  lastResult = result;
   const section = document.getElementById('result-section');
   if (!section) return;
 
@@ -84,7 +151,8 @@ function showResult(result: EvaluateResult): void {
 
   const errorEl = document.getElementById('result-error')!;
   const tierEl = document.getElementById('result-tier')!;
-  const scoreEl = document.getElementById('result-score')!;
+  const donutEl = document.getElementById('score-donut') as HTMLElement | null;
+  const pctLabelEl = document.getElementById('score-pct-label');
   const expLevelEl = document.getElementById('result-experience-level')!;
   const matchedEl = document.getElementById('result-matched-skills')!;
   const missingEl = document.getElementById('result-missing-skills')!;
@@ -92,52 +160,67 @@ function showResult(result: EvaluateResult): void {
 
   errorEl.textContent = '';
   tierEl.textContent = '';
-  scoreEl.textContent = '';
+  if (donutEl) { donutEl.style.removeProperty('--pct'); donutEl.style.removeProperty('--donut-color'); }
+  if (pctLabelEl) pctLabelEl.textContent = '';
   expLevelEl.textContent = '';
   matchedEl.innerHTML = '';
   missingEl.innerHTML = '';
   rationaleEl.textContent = '';
 
   if (result.error) {
-    errorEl.textContent = `Error: ${result.error}`; // keep "Error:" prefix as-is (universal term)
+    errorEl.textContent = `Error: ${result.error}`;
     return;
   }
 
   if (result.warning) {
-    errorEl.textContent = `Aviso: ${result.warning}`;
+    errorEl.textContent = `${t().warning}: ${result.warning}`;
   }
 
-  tierEl.textContent = result.tierLabel;
+  // Re-compute tier label in current language
+  const tierLabels = getTierLabels(currentLang);
+  tierEl.textContent = tierLabels[result.tier] ?? result.tierLabel;
   tierEl.dataset.tier = result.tier;
 
-  scoreEl.textContent = `Encaje: ${result.score}%`;
+  // Donut chart — color keyed to tier
+  const tierDonutColors: Record<string, string> = {
+    high: '#C8522A',
+    medium: '#D97020',
+    low: '#E89840',
+    rejected: '#dc2626',
+  };
+  const donutColor = tierDonutColors[result.tier] ?? '#C8522A';
+  if (donutEl) {
+    donutEl.style.setProperty('--pct', `${result.score}%`);
+    donutEl.style.setProperty('--donut-color', donutColor);
+  }
+  if (pctLabelEl) pctLabelEl.textContent = `${result.score}%`;
 
   if (result.experienceLevel) {
-    const LEVEL_LABELS: Record<string, string> = {
-      junior: 'Junior (<3 años)',
-      mid: 'Mid (3–6 años)',
-      senior: 'Senior (6–12 años)',
-      staff: 'Staff / Principal (12+ años)',
+    const levelYears: Record<string, string> = {
+      junior: t().juniorYears,
+      mid: t().midYears,
+      senior: t().seniorYears,
+      staff: t().staffYears,
     };
-    expLevelEl.textContent = `Nivel: ${LEVEL_LABELS[result.experienceLevel] ?? result.experienceLevel}`;
+    expLevelEl.textContent = `${t().level}: ${levelYears[result.experienceLevel] ?? result.experienceLevel}`;
     expLevelEl.dataset.level = result.experienceLevel;
   }
 
   const matchedLabel = document.createElement('strong');
-  matchedLabel.textContent = 'Habilidades que encajan: ';
+  matchedLabel.textContent = `${t().matchedSkillsLabel}: `;
   matchedEl.appendChild(matchedLabel);
   matchedEl.appendChild(
     document.createTextNode(
-      result.matchedSkills.length > 0 ? result.matchedSkills.join(', ') : 'Ninguna'
+      result.matchedSkills.length > 0 ? result.matchedSkills.join(', ') : t().none
     )
   );
 
   const missingLabel = document.createElement('strong');
-  missingLabel.textContent = 'Habilidades que faltan: ';
+  missingLabel.textContent = `${t().missingSkillsLabel}: `;
   missingEl.appendChild(missingLabel);
   missingEl.appendChild(
     document.createTextNode(
-      result.missingSkills.length > 0 ? result.missingSkills.join(', ') : 'Ninguna'
+      result.missingSkills.length > 0 ? result.missingSkills.join(', ') : t().none
     )
   );
 
@@ -160,11 +243,11 @@ function showResult(result: EvaluateResult): void {
 
       const qLabel = document.createElement('p');
       qLabel.className = 'red-flag-question';
-      qLabel.innerHTML = '<strong>Pregunta:</strong> ' + rf.question;
+      qLabel.innerHTML = `<strong>${t().question}:</strong> ` + rf.question;
 
       const aLabel = document.createElement('p');
       aLabel.className = 'red-flag-answer';
-      aLabel.innerHTML = '<strong>Respuesta esperada:</strong> ' + rf.expectedAnswer;
+      aLabel.innerHTML = `<strong>${t().expectedAnswer}:</strong> ` + rf.expectedAnswer;
 
       card.appendChild(flagEl);
       card.appendChild(qLabel);
@@ -182,6 +265,7 @@ function showResult(result: EvaluateResult): void {
   if (msgSection && result.tier !== 'rejected' && result.candidateId) {
     msgSection.hidden = false;
     generateBtn.disabled = false;
+    generateBtn.textContent = t().draftMessage;
     const textarea = document.getElementById('message-textarea') as HTMLTextAreaElement;
     textarea.value = '';
     setMessageButtonsEnabled(false);
@@ -198,28 +282,98 @@ function setMessageButtonsEnabled(enabled: boolean): void {
   (document.getElementById('mark-sent-btn') as HTMLButtonElement).disabled = !enabled;
 }
 
+// ---- Language toggle ----
+
+async function switchLanguage(): Promise<void> {
+  currentLang = currentLang === 'es' ? 'en' : 'es';
+  await setLang(currentLang);
+
+  applyStaticTranslations();
+  await renderStorageUsage();
+  await renderCandidateList();
+  await renderOverdueLow();
+
+  if (!lastResult || lastResult.error) return;
+
+  // Toggling back to the original evaluation language — restore original, no API call needed
+  if (currentLang === originalResultLang && originalResult) {
+    lastResult = originalResult;
+    translatedResultCache = null; // invalidate cache so next toggle re-translates fresh
+    showResult(lastResult);
+    return;
+  }
+
+  // Toggling to the non-original language — use cached translation if valid
+  if (translatedResultCache) {
+    lastResult = translatedResultCache;
+    showResult(lastResult);
+    return;
+  }
+
+  // Show immediately with updated labels while translation is in progress
+  showResult(lastResult);
+
+  const hasContent = originalResult?.rationale || (originalResult?.redFlags && originalResult.redFlags.length > 0);
+  if (!hasContent || !originalResult) return;
+
+  try {
+    const translated = await browser.runtime.sendMessage({
+      type: 'TRANSLATE_RESULT',
+      rationale: originalResult.rationale ?? '',
+      redFlags: originalResult.redFlags ?? [],
+      targetLang: currentLang,
+    }) as TranslateResultResult | undefined;
+
+    if (translated && !translated.translationFailed && !translated.error) {
+      const newResult = { ...originalResult, rationale: translated.rationale, redFlags: translated.redFlags };
+      translatedResultCache = newResult;
+      lastResult = newResult;
+      showResult(lastResult);
+    }
+    // On failure: content stays in original language; no cache set so user can retry by toggling
+  } catch {
+    // Message channel error — content stays in original language, not a blocker
+  }
+}
+
+// ---- Event listeners ----
+
+document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+  void switchLanguage();
+});
+
+document.getElementById('settings-link')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  browser.runtime.openOptionsPage();
+});
+
 document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('evaluate-btn') as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = 'Evaluando...';
+  btn.textContent = t().evaluating;
 
   try {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     currentProfileUrl = tab?.url ?? null;
 
     const result = await browser.runtime.sendMessage({ type: 'EVALUATE' }) as EvaluateResult | undefined;
+    // New evaluation — reset original and clear translation cache
+    translatedResultCache = null;
     if (result === undefined) {
+      originalResult = null;
       showResult({
         score: 0,
         tier: 'rejected',
-        tierLabel: TIER_LABELS['rejected'],
+        tierLabel: getTierLabels(currentLang)['rejected'],
         matchedSkills: [],
         missingSkills: [],
         rationale: '',
         candidateId: '',
-        error: 'El servicio en segundo plano no está listo — recarga la extensión y vuelve a intentarlo',
+        error: t().bgNotReady,
       });
     } else {
+      originalResult = result;
+      originalResultLang = currentLang;
       showResult(result);
       await renderCandidateList();
     }
@@ -232,7 +386,7 @@ document.getElementById('evaluate-btn')?.addEventListener('click', async () => {
     }
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Evaluar';
+    btn.textContent = t().evaluate;
   }
 });
 
@@ -242,7 +396,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
   const btn = document.getElementById('generate-msg-btn') as HTMLButtonElement;
   const statusEl = document.getElementById('message-status')!;
   btn.disabled = true;
-  btn.textContent = 'Generando...';
+  btn.textContent = t().generating;
   statusEl.textContent = '';
 
   try {
@@ -255,7 +409,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
       (document.getElementById('message-textarea') as HTMLTextAreaElement).value = result.message;
       setMessageButtonsEnabled(true);
     } else {
-      statusEl.textContent = result?.error ?? 'No se pudo generar el mensaje';
+      statusEl.textContent = result?.error ?? t().couldNotGenerate;
       statusEl.className = 'error-message';
     }
   } catch (err) {
@@ -263,7 +417,7 @@ document.getElementById('generate-msg-btn')?.addEventListener('click', async () 
     statusEl.className = 'error-message';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Redactar mensaje';
+    btn.textContent = t().draftMessage;
   }
 });
 
@@ -272,11 +426,11 @@ document.getElementById('copy-msg-btn')?.addEventListener('click', async () => {
   const statusEl = document.getElementById('message-status')!;
   try {
     await navigator.clipboard.writeText(textarea.value);
-    statusEl.textContent = '¡Copiado!';
+    statusEl.textContent = t().copied;
     statusEl.className = 'success-message';
     setTimeout(() => { statusEl.textContent = ''; }, 2000);
   } catch {
-    statusEl.textContent = 'No se pudo copiar — selecciona el texto y cópialo manualmente';
+    statusEl.textContent = t().couldNotCopy;
     statusEl.className = 'error-message';
   }
 });
@@ -300,17 +454,17 @@ document.getElementById('mark-sent-btn')?.addEventListener('click', async () => 
   }) as SaveMessageResult | undefined;
 
   if (result?.saved) {
-    statusEl.textContent = 'Mensaje marcado como enviado';
+    statusEl.textContent = t().messageSent;
     statusEl.className = 'success-message';
     await renderCandidateList();
   } else {
-    statusEl.textContent = result?.error ?? 'No se pudo guardar';
+    statusEl.textContent = result?.error ?? t().couldNotSave;
     statusEl.className = 'error-message';
   }
 });
 
 document.getElementById('clear-candidates-btn')?.addEventListener('click', async () => {
-  const confirmed = window.confirm('¿Borrar todos los candidatos? Esta acción no se puede deshacer.');
+  const confirmed = window.confirm(t().clearConfirm);
   if (!confirmed) return;
 
   const btn = document.getElementById('clear-candidates-btn') as HTMLButtonElement;
@@ -318,7 +472,7 @@ document.getElementById('clear-candidates-btn')?.addEventListener('click', async
   try {
     await clearAllCandidates();
     await renderCandidateList();
-    await renderOverdueL3();
+    await renderOverdueLow();
     await renderStorageUsage();
   } finally {
     btn.disabled = false;
@@ -331,11 +485,11 @@ document.getElementById('export-csv-btn')?.addEventListener('click', async () =>
   try {
     const candidates = await getAllCandidates();
     if (candidates.length === 0) {
-      btn.textContent = 'Sin candidatos para exportar';
-      setTimeout(() => { btn.textContent = 'Exportar CSV'; btn.disabled = false; }, 2000);
+      btn.textContent = t().noCandidatesExport;
+      setTimeout(() => { btn.textContent = t().exportCsv; btn.disabled = false; }, 2000);
       return;
     }
-    const csv = candidatesToCsv(candidates);
+    const csv = candidatesToCsv(candidates, currentLang);
     const date = new Date().toISOString().substring(0, 10);
     downloadCsv(csv, `hhrh-candidates-${date}.csv`);
   } finally {
@@ -343,6 +497,14 @@ document.getElementById('export-csv-btn')?.addEventListener('click', async () =>
   }
 });
 
-renderStorageUsage();
-renderCandidateList();
-renderOverdueL3();
+// ---- Init ----
+
+async function init(): Promise<void> {
+  currentLang = await getLang();
+  applyStaticTranslations();
+  await renderStorageUsage();
+  await renderCandidateList();
+  await renderOverdueLow();
+}
+
+void init();

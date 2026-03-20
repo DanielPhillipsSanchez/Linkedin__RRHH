@@ -3,129 +3,316 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HHRH Screener — Ajustes</title>
+    <title id="page-title">EvolvrScreener — Ajustes</title>
     <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --brand:        #C8522A;
+        --brand-dark:   #A3411E;
+        --brand-mid:    #D96C3E;
+        --brand-pale:   #F5C4A4;
+        --brand-faint:  rgba(200, 82, 42, 0.10);
+        --brand-border: rgba(200, 82, 42, 0.20);
+        --surface:      rgba(255, 251, 247, 0.82);
+        --text-1:       #2D1A0E;
+        --text-2:       #6B3A24;
+        --text-3:       #A06040;
+        --shadow-sm:    0 1px 4px rgba(200, 82, 42, 0.10);
+        --shadow-md:    0 3px 12px rgba(200, 82, 42, 0.14);
+        --radius-card:  14px;
+        --radius-btn:   10px;
+        --radius-sm:    7px;
+      }
+
       body {
-        font-family: system-ui, sans-serif;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--text-1);
+        background: linear-gradient(160deg, #FEF0E4 0%, #FDDEC8 100%);
+        min-height: 100vh;
+        padding: 20px 24px 40px;
+      }
+
+      .page-wrap {
         max-width: 800px;
         margin: 0 auto;
-        padding: 24px;
-        color: #1a1a1a;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
-      h1 {
-        font-size: 1.5rem;
-        margin-bottom: 32px;
+
+      /* ---- Header ---- */
+      .page-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-card);
+        padding: 12px 16px;
+        backdrop-filter: blur(6px);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 4px;
       }
-      h2 {
-        font-size: 1.15rem;
-        margin-bottom: 16px;
+
+      .page-header img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        flex-shrink: 0;
       }
+
+      .page-header h1 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--brand);
+        letter-spacing: -0.02em;
+        flex: 1;
+      }
+
+      /* ---- Cards (sections) ---- */
       section {
-        margin-bottom: 40px;
-        padding-bottom: 32px;
-        border-bottom: 1px solid #e0e0e0;
+        background: var(--surface);
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-card);
+        padding: 18px 20px;
+        backdrop-filter: blur(6px);
+        box-shadow: var(--shadow-sm);
       }
-      section:last-child {
-        border-bottom: none;
+
+      h2 {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--brand);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 12px;
       }
+
+      p {
+        font-size: 0.88rem;
+        color: var(--text-2);
+        margin-bottom: 10px;
+      }
+
+      /* ---- Form inputs ---- */
+      label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-2);
+        margin-bottom: 4px;
+      }
+
       input[type="password"],
       input[type="text"],
       textarea {
         display: block;
         width: 100%;
-        box-sizing: border-box;
         padding: 8px 10px;
-        font-size: 0.95rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        margin-bottom: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 10px;
+        background: rgba(254, 240, 228, 0.55);
+        color: var(--text-1);
+        transition: border-color 0.15s, box-shadow 0.15s;
       }
+
+      input[type="password"]:focus,
+      input[type="text"]:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px rgba(200, 82, 42, 0.14);
+      }
+
       textarea {
         resize: vertical;
-        font-family: inherit;
       }
+
+      /* ---- Buttons ---- */
       button {
-        padding: 8px 16px;
-        font-size: 0.9rem;
+        padding: 7px 16px;
+        font-size: 0.88rem;
+        font-weight: 600;
         cursor: pointer;
-        border: 1px solid #888;
-        border-radius: 4px;
-        background: #f5f5f5;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: linear-gradient(135deg, var(--brand-mid) 0%, var(--brand) 100%);
+        color: #fff;
+        transition: all 0.18s;
+        box-shadow: 0 2px 8px rgba(200, 82, 42, 0.28);
       }
-      button:hover {
-        background: #e8e8e8;
+
+      button:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+        box-shadow: 0 3px 10px rgba(200, 82, 42, 0.38);
       }
+
+      button:disabled {
+        background: var(--brand-pale);
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+
+      /* Secondary / destructive buttons */
+      button.btn-secondary {
+        background: var(--brand-faint);
+        color: var(--brand-dark);
+        border: 1px solid var(--brand-border);
+        box-shadow: none;
+      }
+
+      button.btn-secondary:hover:not(:disabled) {
+        background: rgba(200, 82, 42, 0.16);
+        border-color: var(--brand);
+        box-shadow: none;
+      }
+
+      /* ---- Lang toggle ---- */
+      .lang-btn {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--brand);
+        background: var(--brand-faint);
+        border: 1px solid var(--brand-border);
+        border-radius: 6px;
+        padding: 3px 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        letter-spacing: 0.06em;
+        box-shadow: none;
+        flex-shrink: 0;
+      }
+
+      .lang-btn:hover {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+      }
+
+      /* ---- Status / indicators ---- */
       #api-key-status {
         display: block;
-        margin-top: 8px;
-        font-size: 0.9rem;
-        color: #555;
-      }
-      #api-key-indicator {
         margin-top: 4px;
         font-size: 0.85rem;
-        color: #666;
+        color: var(--text-2);
       }
+
+      #api-key-indicator {
+        margin-top: 4px;
+        font-size: 0.82rem;
+        color: var(--text-3);
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      /* ---- JD list ---- */
       #jd-list {
         list-style: none;
-        padding: 0;
-        margin: 0 0 24px 0;
+        margin: 0 0 20px 0;
       }
+
       #jd-list li {
         display: block;
         padding: 10px 0;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--brand-border);
       }
+
       #jd-list li:last-child {
         border-bottom: none;
       }
+
       .jd-item-header {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
+
       .jd-item-header strong {
         flex: 1;
+        font-size: 0.92rem;
+        color: var(--text-1);
       }
+
       .jd-item-header button {
         margin-left: auto;
         flex-shrink: 0;
+        padding: 3px 10px;
+        font-size: 0.8rem;
+        background: rgba(220, 38, 38, 0.08);
+        color: #be123c;
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        box-shadow: none;
       }
+
+      .jd-item-header button:hover:not(:disabled) {
+        background: rgba(220, 38, 38, 0.15);
+        border-color: rgba(220, 38, 38, 0.4);
+        box-shadow: none;
+      }
+
       details {
         margin-top: 8px;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
       }
+
       details summary {
         cursor: pointer;
-        color: #555;
+        color: var(--brand);
         user-select: none;
         margin-bottom: 6px;
+        font-weight: 500;
       }
+
       .skill-list-editor {
-        padding: 6px 0 6px 8px;
-        border-left: 2px solid #ddd;
+        padding: 6px 0 6px 10px;
+        border-left: 2px solid var(--brand-pale);
         margin-bottom: 8px;
       }
+
       .skill-row {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 4px;
       }
+
       .skill-row .skill-text {
         flex: 1;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+        color: var(--text-1);
       }
+
       .skill-row button {
-        padding: 2px 6px;
-        font-size: 0.85rem;
+        padding: 2px 7px;
+        font-size: 0.82rem;
+        background: rgba(220, 38, 38, 0.08);
+        color: #be123c;
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        box-shadow: none;
       }
+
+      .skill-row button:hover:not(:disabled) {
+        background: rgba(220, 38, 38, 0.15);
+        box-shadow: none;
+      }
+
       .add-skill-form {
         display: flex;
         gap: 6px;
         margin-top: 8px;
         flex-wrap: wrap;
       }
+
       .add-skill-form .skill-text-input {
         display: inline;
         width: auto;
@@ -133,87 +320,124 @@
         min-width: 120px;
         margin-bottom: 0;
       }
+
       .add-skill-form select {
-        padding: 6px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 0.9rem;
+        padding: 7px 8px;
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-sm);
+        font-size: 0.88rem;
+        background: rgba(254, 240, 228, 0.55);
+        color: var(--text-1);
       }
+
       .add-skill-form .add-skill-btn {
         flex-shrink: 0;
       }
-      label {
-        display: block;
+
+      /* ---- Import section ---- */
+      .import-area {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--brand-border);
+      }
+
+      .file-label {
+        display: inline-block;
+        padding: 6px 14px;
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 600;
+        background: var(--brand-faint);
+        color: var(--brand-dark);
+        transition: all 0.15s;
+      }
+
+      .file-label:hover {
+        background: rgba(200, 82, 42, 0.16);
+        border-color: var(--brand);
+      }
+
+      /* ---- Active JD selector ---- */
+      #active-jd-selector label {
+        font-weight: normal;
         font-size: 0.9rem;
-        font-weight: 500;
-        margin-bottom: 4px;
-        color: #333;
+        color: var(--text-1);
+        margin-bottom: 6px;
+        display: block;
       }
     </style>
   </head>
   <body>
-    <h1>Ajustes — HHRH Screener</h1>
-
-    <section id="claude-api-key-section">
-      <h2>Clave API de Claude</h2>
-      <p style="color:#555; font-size:0.9rem; margin-bottom:12px;">
-        Introduce tu clave API de Anthropic. Es necesaria para evaluar candidatos y generar mensajes de contacto.
-      </p>
-      <label for="claude-api-key-input">Clave API</label>
-      <input
-        type="password"
-        id="claude-api-key-input"
-        placeholder="sk-ant-..."
-        autocomplete="off"
-      />
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <button id="claude-api-key-save-btn">Guardar y verificar</button>
-        <button id="claude-api-key-clear-btn">Eliminar clave</button>
+    <div class="page-wrap">
+      <div class="page-header">
+        <img src="./evolv-logo.png" alt="evolv" />
+        <h1 id="settings-heading">Ajustes — EvolvrScreener</h1>
+        <button id="lang-toggle-btn" type="button" class="lang-btn">EN</button>
       </div>
-      <span id="claude-api-key-status"></span>
-      <p id="claude-api-key-indicator"></p>
-    </section>
 
-    <section id="active-jd-section">
-      <h2>Oferta activa</h2>
-      <p style="color:#555; font-size:0.9rem; margin-bottom: 12px;">Selecciona qué oferta usar al evaluar candidatos.</p>
-      <div id="active-jd-selector"></div>
-    </section>
-
-    <section id="jd-section">
-      <h2>Ofertas de trabajo</h2>
-      <ul id="jd-list"></ul>
-
-      <div id="jd-add-form">
-        <label for="jd-title-input">Título</label>
+      <section id="claude-api-key-section">
+        <h2 id="api-key-section-title">Clave API de Claude</h2>
+        <p id="api-key-desc">
+          Introduce tu clave API de Anthropic. Es necesaria para evaluar candidatos y generar mensajes de contacto.
+        </p>
+        <label id="api-key-label" for="claude-api-key-input">Clave API</label>
         <input
-          type="text"
-          id="jd-title-input"
-          placeholder="e.g. Senior Backend Engineer"
+          type="password"
+          id="claude-api-key-input"
+          placeholder="sk-ant-..."
+          autocomplete="off"
         />
-        <label for="jd-raw-text-input">Texto de la oferta</label>
-        <textarea
-          id="jd-raw-text-input"
-          placeholder="Pega aquí el texto de la oferta de trabajo..."
-          rows="8"
-        ></textarea>
-        <button id="jd-add-btn">Añadir oferta</button>
-
-        <div style="margin-top:20px; padding-top:16px; border-top:1px solid #eee;">
-          <p style="font-size:0.9rem; color:#555; margin-bottom:8px;">
-            O importa desde un archivo. Formatos soportados: <em>Excel (.xlsx, .xls)</em>, <em>CSV (.csv)</em>, <em>Word (.docx, .doc)</em>, <em>PDF (.pdf)</em>.
-            Para Excel y CSV el archivo debe tener columnas como
-            <em>Título</em>, <em>Descripción</em>, <em>Habilidades</em>, <em>Experiencia</em>, <em>Idiomas</em>.
-            Word y PDF se importan como texto libre.
-          </p>
-          <label for="jd-file-input" style="display:inline-block; padding:6px 14px; border:1px solid #888; border-radius:4px; cursor:pointer; font-size:0.9rem; background:#f5f5f5;">
-            Seleccionar archivo
-          </label>
-          <input type="file" id="jd-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc" style="display:none;" />
-          <span id="jd-import-status" style="margin-left:10px; font-size:0.85rem; color:#555;"></span>
+        <div class="btn-row">
+          <button id="claude-api-key-save-btn">Guardar y verificar</button>
+          <button id="claude-api-key-clear-btn" class="btn-secondary">Eliminar clave</button>
         </div>
-      </div>
-    </section>
+        <span id="claude-api-key-status"></span>
+        <p id="claude-api-key-indicator"></p>
+      </section>
+
+      <section id="active-jd-section">
+        <h2 id="active-job-title">Nueva búsqueda de Evolvers</h2>
+        <p id="active-job-desc">Selecciona qué oferta usar al evaluar candidatos.</p>
+        <div id="active-jd-selector"></div>
+      </section>
+
+      <section id="jd-section">
+        <h2 id="jobs-section-title">Formulario de requisición</h2>
+        <ul id="jd-list"></ul>
+
+        <div id="jd-add-form">
+          <label id="job-title-label" for="jd-title-input">Título</label>
+          <input
+            type="text"
+            id="jd-title-input"
+            placeholder="e.g. Senior Backend Engineer"
+          />
+          <label id="job-raw-text-label" for="jd-raw-text-input">Formulario de requisición</label>
+          <textarea
+            id="jd-raw-text-input"
+            placeholder="Pega aquí el texto de la oferta de trabajo..."
+            rows="8"
+          ></textarea>
+          <button id="jd-add-btn">Añadir oferta</button>
+
+          <div class="import-area">
+            <p id="import-desc">
+              O importa desde un archivo. Formatos soportados: <em>Excel (.xlsx, .xls)</em>, <em>CSV (.csv)</em>, <em>Word (.docx, .doc)</em>, <em>PDF (.pdf)</em>.
+              Para Excel y CSV el archivo debe tener columnas como
+              <em>Título</em>, <em>Descripción</em>, <em>Habilidades</em>, <em>Experiencia</em>, <em>Idiomas</em>.
+              Word y PDF se importan como texto libre.
+            </p>
+            <label id="select-file-label" for="jd-file-input" class="file-label">
+              Seleccionar archivo
+            </label>
+            <input type="file" id="jd-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc" style="display:none;" />
+            <span id="jd-import-status" style="margin-left:10px; font-size:0.85rem; color:var(--text-2);"></span>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <script type="module" src="./index.ts"></script>
   </body>
