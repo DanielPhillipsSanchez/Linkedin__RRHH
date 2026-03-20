@@ -10,19 +10,40 @@ Necesitas tener instalado el navegador **Google Chrome**. Si no lo tienes, desca
 
 ---
 
-## Paso 1 — Recibe la carpeta de la extension
+## Paso 1 — Recibe y descomprime el archivo de la extension
 
-El equipo de soporte te compartira directamente la carpeta **`chrome-mv3`** (por USB, carpeta compartida o correo). No necesitas descargar nada de internet.
+El equipo de soporte te compartira un archivo `.zip` (por USB, carpeta compartida o correo). Descomprimelo en un lugar fijo de tu computadora, por ejemplo en **Documentos**. **No muevas ni elimines la carpeta despues de instalar.**
 
-Una vez que tengas la carpeta, guardala en un lugar fijo de tu computadora (por ejemplo, en **Documentos**). No la muevas ni la elimines despues de instalarla.
+**En Windows:**
+1. Clic derecho sobre el archivo `.zip` → **"Extraer todo"** → **"Extraer"**
+2. Se creara una carpeta con el contenido
 
-> Si te compartieron un archivo `.zip`, descomprimelo primero:
-> - **En Windows**: clic derecho → "Extraer todo" → "Extraer"
-> - **En Mac**: doble clic sobre el archivo `.zip`
+**En Mac:**
+1. Doble clic sobre el archivo `.zip`
+2. Se creara automaticamente una carpeta con el contenido
 
 ---
 
-## Paso 2 — Abre la pantalla de extensiones en Chrome
+## Paso 2 — Muestra las carpetas ocultas para encontrar `.output`
+
+Dentro de la carpeta que descomprimiste hay una subcarpeta llamada **`.output`** (con un punto al inicio). Las carpetas que empiezan con punto estan **ocultas por defecto** en Windows y Mac. Sigue estos pasos para verla:
+
+**En Windows:**
+1. Abre la carpeta descomprimida en el Explorador de archivos
+2. Haz clic en la pestana **"Ver"** en la barra superior
+3. Marca la casilla **"Elementos ocultos"**
+4. Ahora veras la carpeta **`.output`**
+
+**En Mac:**
+1. Abre la carpeta descomprimida en el Finder
+2. Presiona al mismo tiempo **Cmd + Shift + Punto ( . )**
+3. Ahora veras la carpeta **`.output`**
+
+> Puedes repetir el atajo para volver a ocultar las carpetas ocultas despues de instalar.
+
+---
+
+## Paso 3 — Abre la pantalla de extensiones en Chrome
 
 1. Abre **Google Chrome**.
 2. En la barra de direcciones, escribe exactamente esto y presiona **Enter**:
@@ -35,7 +56,7 @@ chrome://extensions/
 
 ---
 
-## Paso 3 — Activa el "Modo de desarrollador"
+## Paso 4 — Activa el "Modo de desarrollador"
 
 En la esquina superior derecha de esa pantalla veras un interruptor que dice **"Modo de desarrollador"**.
 
@@ -44,18 +65,22 @@ En la esquina superior derecha de esa pantalla veras un interruptor que dice **"
 
 ---
 
-## Paso 4 — Carga la extension
+## Paso 5 — Carga la extension en Chrome
 
-1. Haz clic en el boton **"Cargar extension sin empaquetar"** que aparecera en la parte superior izquierda.
-2. Se abrira una ventana para seleccionar una carpeta.
-3. Busca y selecciona la carpeta **`chrome-mv3`** que recibiste en el Paso 1.
-4. Haz clic en **"Seleccionar carpeta"**.
+1. Haz clic en el boton **"Cargar extension sin empaquetar"** que aparece en la parte superior izquierda.
+2. Se abrira una ventana del explorador de archivos para seleccionar una carpeta.
+3. Navega hasta la carpeta que descomprimiste y entra en ella.
+4. Abre la carpeta **`.output`** (recuerda que debes tener activada la vista de elementos ocultos del Paso 2).
+5. Entra en la carpeta **`chrome-mv3`** que esta dentro de `.output`.
+6. Con **`chrome-mv3`** seleccionada, haz clic en **"Seleccionar carpeta"** (Windows) o **"Abrir"** (Mac).
+
+> La ruta correcta es: `[carpeta descomprimida]` → `.output` → **`chrome-mv3`** ← esta es la que debes seleccionar.
 
 Si todo salio bien, la extension aparecera en la lista con el nombre **"EvolvrScreener"** y sin ningun mensaje de error en rojo.
 
 ---
 
-## Paso 5 — Fija la extension en la barra de Chrome
+## Paso 6 — Fija la extension en la barra de Chrome
 
 Para tener la extension siempre a mano:
 
@@ -70,7 +95,7 @@ Ahora el icono de la extension quedara visible en tu barra de Chrome para usarlo
 
 ---
 
-## Paso 6 — Crea tu primera Busqueda de Evolvers
+## Paso 7 — Crea tu primera Busqueda de Evolvers
 
 Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta buscando.
 
@@ -115,7 +140,7 @@ Antes de evaluar candidatos, debes indicarle a la extension para que puesto esta
 ## Preguntas frecuentes
 
 **No veo el icono de la extension en Chrome**
-Sigue el Paso 5 para fijarlo en la barra.
+Sigue el Paso 6 para fijarlo en la barra.
 
 **La extension no detecta el perfil del candidato**
 Asegurate de estar en una URL de LinkedIn que tenga el formato `linkedin.com/in/nombre-del-candidato` y espera 2 segundos despues de que cargue la pagina.
@@ -127,7 +152,7 @@ Verifica que las habilidades marcadas como **Obligatoria** sean las realmente cr
 Si navegaste a un perfil diferente, el resultado cambia al nuevo perfil. Si sigues en el mismo perfil, el resultado se debe restaurar automaticamente. Si no aparece, vuelve a hacer clic en "Evaluar".
 
 **Movi o elimine la carpeta `chrome-mv3` por error**
-Pide al equipo de soporte que te vuelva a compartir la carpeta y repite los pasos 4 y 5.
+Pide al equipo de soporte que te vuelva a compartir el archivo y repite desde el Paso 1.
 
 ---
 

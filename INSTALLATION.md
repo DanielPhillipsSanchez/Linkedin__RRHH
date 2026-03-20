@@ -10,19 +10,40 @@ You need to have **Google Chrome** installed. If you don't have it, download it 
 
 ---
 
-## Step 1 — Receive the extension folder
+## Step 1 — Receive and extract the extension file
 
-The support team will share the **`chrome-mv3`** folder with you directly (via USB, shared folder, or email). You don't need to download anything from the internet.
+The support team will share a `.zip` file with you directly (via USB, shared folder, or email). Extract it somewhere permanent on your computer, for example in **Documents**. **Do not move or delete the folder after installing.**
 
-Once you have the folder, save it somewhere permanent on your computer (for example, in **Documents**). Do not move or delete it after installing.
+**On Windows:**
+1. Right-click the `.zip` file → **"Extract All"** → **"Extract"**
+2. A folder with the contents will be created
 
-> If you were sent a `.zip` file, extract it first:
-> - **On Windows**: right-click → "Extract All" → "Extract"
-> - **On Mac**: double-click the `.zip` file
+**On Mac:**
+1. Double-click the `.zip` file
+2. A folder with the contents will be created automatically
 
 ---
 
-## Step 2 — Open the extensions screen in Chrome
+## Step 2 — Show hidden folders to find `.output`
+
+Inside the extracted folder there is a subfolder called **`.output`** (with a dot at the beginning). Folders that start with a dot are **hidden by default** on both Windows and Mac. Follow these steps to make it visible:
+
+**On Windows:**
+1. Open the extracted folder in File Explorer
+2. Click the **"View"** tab in the top toolbar
+3. Check the **"Hidden items"** checkbox
+4. You will now see the **`.output`** folder
+
+**On Mac:**
+1. Open the extracted folder in Finder
+2. Press **Cmd + Shift + Period ( . )** at the same time
+3. You will now see the **`.output`** folder
+
+> You can repeat the shortcut to hide the hidden folders again after installing.
+
+---
+
+## Step 3 — Open the extensions screen in Chrome
 
 1. Open **Google Chrome**.
 2. In the address bar, type exactly this and press **Enter**:
@@ -35,7 +56,7 @@ chrome://extensions/
 
 ---
 
-## Step 3 — Enable "Developer mode"
+## Step 4 — Enable "Developer mode"
 
 In the top right corner of that screen you will see a toggle that says **"Developer mode"**.
 
@@ -44,18 +65,22 @@ In the top right corner of that screen you will see a toggle that says **"Develo
 
 ---
 
-## Step 4 — Load the extension
+## Step 5 — Load the extension in Chrome
 
-1. Click the **"Load unpacked"** button that will appear in the top left.
-2. A window to select a folder will open.
-3. Find and select the **`chrome-mv3`** folder you received in Step 1.
-4. Click **"Select Folder"**.
+1. Click the **"Load unpacked"** button that appears in the top left.
+2. A file explorer window will open for you to select a folder.
+3. Navigate to the folder you extracted and open it.
+4. Open the **`.output`** folder (remember you must have hidden items visible from Step 2).
+5. Enter the **`chrome-mv3`** folder inside `.output`.
+6. With **`chrome-mv3`** selected, click **"Select Folder"** (Windows) or **"Open"** (Mac).
+
+> The correct path is: `[extracted folder]` → `.output` → **`chrome-mv3`** ← this is the one to select.
 
 If everything went well, the extension will appear in the list with the name **"EvolvrScreener"** and no red error messages.
 
 ---
 
-## Step 5 — Pin the extension to the Chrome toolbar
+## Step 6 — Pin the extension to the Chrome toolbar
 
 To always have the extension within reach:
 
@@ -70,7 +95,7 @@ The extension icon will now be visible in your Chrome toolbar for use at any tim
 
 ---
 
-## Step 6 — Create your first Evolver Search
+## Step 7 — Create your first Evolver Search
 
 Before evaluating candidates, you need to tell the extension which position you are hiring for.
 
@@ -115,7 +140,7 @@ Before evaluating candidates, you need to tell the extension which position you 
 ## Frequently asked questions
 
 **I don't see the extension icon in Chrome**
-Follow Step 5 to pin it to the toolbar.
+Follow Step 6 to pin it to the toolbar.
 
 **The extension does not detect the candidate's profile**
 Make sure you are on a LinkedIn URL with the format `linkedin.com/in/candidate-name` and wait 2 seconds after the page loads.
@@ -127,7 +152,7 @@ Check that the skills marked as **Required** are truly critical for the role. Th
 If you navigated to a different profile, the result changes to the new profile. If you are still on the same profile, the result should restore automatically. If it doesn't appear, click "Evaluate" again.
 
 **I moved or deleted the `chrome-mv3` folder by mistake**
-Ask the support team to share the folder again and repeat steps 4 and 5.
+Ask the support team to share the file again and repeat from Step 1.
 
 ---
 
