@@ -2,7 +2,8 @@
 // Keyword-pass scoring logic.
 // Wave 1 (plan 03-02): full implementation.
 
-import type { Skill } from '../storage/schema';
+import type { Skill, ExperienceRequirement } from '../storage/schema';
+import type { ExperienceEntry } from '../parser/types';
 
 // Weights are only used as fallback; computeScore uses a two-bucket formula.
 const _WEIGHT: Record<Skill['weight'], number> = {
@@ -72,6 +73,46 @@ export function skillMatchesInText(jdSkill: string, text: string): boolean {
   // Escape regex special chars and allow flexible whitespace between words
   const escaped = jdNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
   return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`).test(textNorm);
+}
+
+/**
+ * Parses a LinkedIn duration string like "2 yrs 3 mos" or "1 year 6 months" into decimal years.
+ * Returns 0 if the string contains no recognizable time units.
+ */
+export function parseDurationToYears(duration: string): number {
+  const yearMatch = duration.match(/(\d+)\s*(?:yr|yrs|year|years)/i);
+  const monthMatch = duration.match(/(\d+)\s*(?:mo|mos|month|months)/i);
+  const years = yearMatch ? parseInt(yearMatch[1], 10) : 0;
+  const months = monthMatch ? parseInt(monthMatch[1], 10) : 0;
+  return years + months / 12;
+}
+
+/**
+ * Sums all parsed experience durations from a candidate's experience list.
+ * Returns 0 if no duration data could be parsed (LinkedIn may omit durations).
+ */
+export function computeTotalExperienceYears(experience: ExperienceEntry[]): number {
+  return experience.reduce((sum, e) => sum + parseDurationToYears(e.duration), 0);
+}
+
+/**
+ * Checks whether a candidate's total years of experience satisfies the job requirement.
+ *
+ * Rules:
+ *   'exact'   X years → accept X-1 to X+1 (e.g. "3 years" → 2–4)
+ *   'minimum' X years → accept X to X+2   (e.g. "more than 3 years" → 3–5)
+ *
+ * Returns { passes, min, max } so the caller can build a rejection message.
+ * If totalYears is 0 (not parseable), passes is always true (benefit of the doubt).
+ */
+export function checkExperienceRequirement(
+  req: ExperienceRequirement,
+  totalYears: number,
+): { passes: boolean; min: number; max: number } {
+  if (totalYears === 0) return { passes: true, min: 0, max: 0 };
+  const min = req.type === 'exact' ? Math.max(0, req.years - 1) : req.years;
+  const max = req.type === 'exact' ? req.years + 1 : req.years + 2;
+  return { passes: totalYears >= min && totalYears <= max, min, max };
 }
 
 /**

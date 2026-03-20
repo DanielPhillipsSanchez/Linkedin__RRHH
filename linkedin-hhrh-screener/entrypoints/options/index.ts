@@ -2,7 +2,7 @@
 // Options page controller — Anthropic API key + JD CRUD + skill editor + active JD
 
 import { saveJd, getAllJds, deleteJd, setActiveJdId, getActiveJdId, saveAnthropicApiKey, getAnthropicApiKey, isApiKeyBuiltIn, getLang, setLang } from '../../src/storage/storage';
-import type { JobDescription, Skill } from '../../src/storage/schema';
+import type { JobDescription, Skill, ExperienceRequirement } from '../../src/storage/schema';
 import type { Lang } from '../../src/i18n';
 import { T } from '../../src/i18n';
 import * as XLSX from 'xlsx';
@@ -77,6 +77,19 @@ function applyStaticTranslations(): void {
 
   const selectFileLabel = document.getElementById('select-file-label');
   if (selectFileLabel) selectFileLabel.textContent = tr.selectFile;
+
+  const expReqLabel = document.getElementById('exp-req-label');
+  if (expReqLabel) expReqLabel.textContent = tr.expReqSection;
+
+  const expReqYearsLabel = document.getElementById('exp-req-years-label');
+  if (expReqYearsLabel) expReqYearsLabel.textContent = tr.expReqYears;
+
+  const expTypeSelect = document.getElementById('jd-exp-type') as HTMLSelectElement | null;
+  if (expTypeSelect) {
+    expTypeSelect.options[0].text = tr.expReqNone;
+    expTypeSelect.options[1].text = tr.expReqExact;
+    expTypeSelect.options[2].text = tr.expReqMinimum;
+  }
 }
 
 // ---- Anthropic API Key ----
@@ -139,6 +152,13 @@ function buildSkillEditorHtml(jd: JobDescription): string {
     </div>
   `).join('');
 
+  const expReq = jd.experienceRequirement;
+  const expTypeVal = expReq?.type ?? '';
+  const expYearsVal = expReq?.years ?? '';
+  const expSummary = expReq
+    ? `${expReq.type === 'exact' ? tr.expReqExact : tr.expReqMinimum} ${expReq.years} ${tr.expReqYears}`
+    : tr.expReqNone;
+
   return `
     <details>
       <summary>${tr.editSkills} (${jd.skills.length})</summary>
@@ -151,6 +171,19 @@ function buildSkillEditorHtml(jd: JobDescription): string {
             <option value="nice-to-have">${tr.niceToHave}</option>
           </select>
           <button class="add-skill-btn" data-jd-id="${jd.id}">${tr.addSkill}</button>
+        </div>
+        <div style="margin-top:10px; padding-top:8px; border-top:1px solid var(--brand-border);">
+          <p style="font-size:0.82rem; font-weight:600; color:var(--text-2); margin-bottom:6px;">${tr.expReqSection}: <em style="font-weight:normal;">${expSummary}</em></p>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <select class="exp-type-select" data-exp-jd="${jd.id}" style="padding:5px 7px; border:1px solid var(--brand-border); border-radius:var(--radius-sm); font-size:0.85rem; background:rgba(254,240,228,0.55); color:var(--text-1);">
+              <option value="" ${expTypeVal === '' ? 'selected' : ''}>${tr.expReqNone}</option>
+              <option value="exact" ${expTypeVal === 'exact' ? 'selected' : ''}>${tr.expReqExact}</option>
+              <option value="minimum" ${expTypeVal === 'minimum' ? 'selected' : ''}>${tr.expReqMinimum}</option>
+            </select>
+            <input type="number" class="exp-years-input" data-exp-jd="${jd.id}" min="0" max="30" value="${expYearsVal}" placeholder="0" style="width:60px; padding:5px 7px; border:1px solid var(--brand-border); border-radius:var(--radius-sm); font-size:0.85rem; background:rgba(254,240,228,0.55); color:var(--text-1);" />
+            <span style="font-size:0.85rem; color:var(--text-2);">${tr.expReqYears}</span>
+            <button class="exp-save-btn" data-exp-jd="${jd.id}" style="padding:4px 10px; font-size:0.82rem;">${tr.expReqSave}</button>
+          </div>
         </div>
       </div>
     </details>
@@ -191,11 +224,21 @@ async function handleJdAdd(): Promise<void> {
   const rawText = rawTextInput.value.trim();
   if (!title || !rawText) return;
 
+  const expTypeSelect = document.getElementById('jd-exp-type') as HTMLSelectElement;
+  const expYearsInput = document.getElementById('jd-exp-years') as HTMLInputElement;
+  const expType = expTypeSelect?.value as 'exact' | 'minimum' | '';
+  const expYears = expYearsInput ? parseFloat(expYearsInput.value) : NaN;
+  const experienceRequirement: ExperienceRequirement | undefined =
+    expType && !isNaN(expYears) && expYears >= 0
+      ? { type: expType, years: expYears }
+      : undefined;
+
   const jd: JobDescription = {
     id: crypto.randomUUID(),
     title,
     rawText,
     skills: [],
+    ...(experienceRequirement ? { experienceRequirement } : {}),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -203,6 +246,8 @@ async function handleJdAdd(): Promise<void> {
   await saveJd(jd);
   titleInput.value = '';
   rawTextInput.value = '';
+  if (expTypeSelect) expTypeSelect.value = '';
+  if (expYearsInput) expYearsInput.value = '';
   await renderJdList();
 }
 
@@ -596,6 +641,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const deleteJdId = target.dataset.deleteJd;
     if (deleteJdId) {
       await deleteJd(deleteJdId);
+      await renderJdList();
+      return;
+    }
+
+    // Save experience requirement on existing JD
+    if (target.classList.contains('exp-save-btn')) {
+      const jdId = target.dataset.expJd!;
+      const container = target.closest('.skill-list-editor') as HTMLElement;
+      const typeSelect = container.querySelector('.exp-type-select') as HTMLSelectElement;
+      const yearsInput = container.querySelector('.exp-years-input') as HTMLInputElement;
+      const expType = typeSelect?.value as 'exact' | 'minimum' | '';
+      const expYears = yearsInput ? parseFloat(yearsInput.value) : NaN;
+      const allJds = await getAllJds();
+      const jd = allJds.find(j => j.id === jdId);
+      if (!jd) return;
+      const experienceRequirement: ExperienceRequirement | undefined =
+        expType && !isNaN(expYears) && expYears >= 0
+          ? { type: expType, years: expYears }
+          : undefined;
+      await saveJd({ ...jd, experienceRequirement, updatedAt: new Date().toISOString() });
       await renderJdList();
       return;
     }

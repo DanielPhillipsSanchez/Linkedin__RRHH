@@ -127,6 +127,15 @@ export const T = {
     fileReadError: (e: string) => `Error al leer el archivo: ${e}`,
     emptyWord: 'El documento Word está vacío o no se pudo leer el texto.',
     emptyPdf: 'El PDF está vacío o no contiene texto extraíble.',
+    // Experience requirement (options page + rejection)
+    expReqSection: 'Requisito de experiencia (opcional)',
+    expReqNone: 'Sin requisito',
+    expReqExact: 'Exactamente',
+    expReqMinimum: 'Más de',
+    expReqYears: 'años',
+    expReqSave: 'Guardar',
+    expRejected: (totalYears: number, min: number, max: number) =>
+      `Descartado por experiencia: el candidato tiene ${totalYears.toFixed(1)} año(s) de experiencia acumulada. El rango requerido es de ${min}–${max} años.`,
     // CSV headers
     csvName: 'Nombre',
     csvPhone: 'Teléfono',
@@ -263,6 +272,15 @@ export const T = {
     fileReadError: (e: string) => `Error reading file: ${e}`,
     emptyWord: 'Word document is empty or could not extract text.',
     emptyPdf: 'PDF is empty or contains no extractable text.',
+    // Experience requirement (options page + rejection)
+    expReqSection: 'Experience requirement (optional)',
+    expReqNone: 'No requirement',
+    expReqExact: 'Exactly',
+    expReqMinimum: 'More than',
+    expReqYears: 'years',
+    expReqSave: 'Save',
+    expRejected: (totalYears: number, min: number, max: number) =>
+      `Rejected due to experience: candidate has ${totalYears.toFixed(1)} year(s) of accumulated experience. Required range is ${min}–${max} years.`,
     // CSV headers
     csvName: 'Name',
     csvPhone: 'Phone',

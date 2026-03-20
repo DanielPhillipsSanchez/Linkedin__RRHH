@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EvolvrScreener</title>
     <meta name="manifest.type" content="browser_action">
-    <script type="module" crossorigin src="/chunks/popup-B7NAaHQQ.js"></script>
-    <link rel="modulepreload" crossorigin href="/chunks/storage-CbCm4PaD.js">
-    <link rel="stylesheet" crossorigin href="/assets/popup-DvM9euOf.css">
+    <script type="module" crossorigin src="/chunks/popup-CaAJ6ofp.js"></script>
+    <link rel="modulepreload" crossorigin href="/chunks/storage-BM-5A9r6.js">
+    <link rel="stylesheet" crossorigin href="/assets/popup-tAA7e81s.css">
   </head>
   <body>
     <div id="app">
@@ -17,7 +17,10 @@
           <h1>EvolvrScreener</h1>
         </div>
         <div class="header-actions">
-          <button id="lang-toggle-btn" type="button" class="lang-btn">EN</button>
+          <div id="lang-toggle-btn" class="lang-flags" role="button" tabindex="0" aria-label="Cambiar idioma">
+            <span id="flag-es" class="lang-flag lang-flag--active" title="Español">🇨🇴</span>
+            <span id="flag-en" class="lang-flag" title="English">🇺🇸</span>
+          </div>
           <a id="settings-link" href="#">Ajustes</a>
         </div>
       </header>

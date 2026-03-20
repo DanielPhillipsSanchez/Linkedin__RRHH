@@ -368,8 +368,8 @@
         display: block;
       }
     </style>
-    <script type="module" crossorigin src="/chunks/options-CGiskVsk.js"></script>
-    <link rel="modulepreload" crossorigin href="/chunks/storage-CbCm4PaD.js">
+    <script type="module" crossorigin src="/chunks/options-BOd4NdeU.js"></script>
+    <link rel="modulepreload" crossorigin href="/chunks/storage-BM-5A9r6.js">
   </head>
   <body>
     <div class="page-wrap">
@@ -409,6 +409,16 @@
           <input type="text" id="jd-title-input" placeholder="e.g. Senior Backend Engineer">
           <label id="job-raw-text-label" for="jd-raw-text-input">Formulario de requisición</label>
           <textarea id="jd-raw-text-input" placeholder="Pega aquí el texto de la oferta de trabajo..." rows="8"></textarea>
+          <label id="exp-req-label" for="jd-exp-type" style="margin-top:10px;">Requisito de experiencia (opcional)</label>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+            <select id="jd-exp-type" style="padding:7px 8px; border:1px solid var(--brand-border); border-radius:var(--radius-sm); font-size:0.88rem; background:rgba(254,240,228,0.55); color:var(--text-1);">
+              <option value="">Sin requisito</option>
+              <option value="exact">Exactamente</option>
+              <option value="minimum">Más de</option>
+            </select>
+            <input type="number" id="jd-exp-years" min="0" max="30" placeholder="0" style="width:70px; margin-bottom:0; display:inline; padding:7px 8px;">
+            <span id="exp-req-years-label" style="font-size:0.88rem; color:var(--text-2);">años</span>
+          </div>
           <button id="jd-add-btn">Añadir oferta</button>
 
           <div class="import-area">

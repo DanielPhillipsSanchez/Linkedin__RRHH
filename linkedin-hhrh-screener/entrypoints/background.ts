@@ -2,7 +2,7 @@ import { getAnthropicApiKey, getActiveJdId, getAllJds, getAllCandidates, saveCan
 import type { ProfileParsedMessage, EvaluateResult, GenerateMessageResult, SaveMessageResult, SavePhoneResult, TranslateResultResult } from '../src/shared/messages';
 import type { CandidateProfile, ExtractionHealth } from '../src/parser/types';
 import type { CandidateRecord } from '../src/storage/schema';
-import { runKeywordPass, computeScore } from '../src/scorer/scorer';
+import { runKeywordPass, computeScore, computeTotalExperienceYears, checkExperienceRequirement } from '../src/scorer/scorer';
 import { assignTier, getTierLabels } from '../src/scorer/tiers';
 import { refineWithClaude, translateEvaluation } from '../src/scorer/claude';
 import { generateOutreachMessage } from '../src/scorer/messenger';
@@ -139,6 +139,45 @@ export async function handleEvaluate(): Promise<EvaluateResult> {
       candidateId: existing.id,
       evaluationLang: existing.evaluationLang ?? 'es',
     };
+  }
+
+  // Experience requirement hard-rejection filter
+  if (jd.experienceRequirement) {
+    const totalYears = computeTotalExperienceYears(profile.experience);
+    const check = checkExperienceRequirement(jd.experienceRequirement, totalYears);
+    if (!check.passes) {
+      const rationale = t.expRejected(totalYears, check.min, check.max);
+      const now = new Date().toISOString();
+      const record: CandidateRecord = {
+        id: crypto.randomUUID(),
+        name: profile.name,
+        profileUrl: profile.profileUrl,
+        linkedinHeadline: profile.headline,
+        score: 0,
+        tier: 'rejected',
+        rationale,
+        redFlags: [],
+        matchedSkills: [],
+        missingSkills: [],
+        outreachMessage: '',
+        evaluatedAt: now,
+        jdId: jd.id,
+        evaluationLang: lang,
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+      await saveCandidate(record);
+      await refreshBadge();
+      return {
+        score: 0,
+        tier: 'rejected',
+        tierLabel: tierLabels['rejected'],
+        matchedSkills: [],
+        missingSkills: [],
+        rationale,
+        candidateId: record.id,
+        evaluationLang: lang,
+      };
+    }
   }
 
   // Build a full-text blob from about, headline, and experience titles for fallback matching

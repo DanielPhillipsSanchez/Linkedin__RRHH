@@ -18,11 +18,17 @@ export interface Skill {
   weight: 'mandatory' | 'nice-to-have';
 }
 
+export interface ExperienceRequirement {
+  type: 'exact' | 'minimum'; // 'exact' = ±1 yr range; 'minimum' = X to X+2 yrs
+  years: number;
+}
+
 export interface JobDescription {
   id: string;          // UUID from crypto.randomUUID()
   title: string;       // Human-readable name e.g. "Senior Backend Engineer"
   rawText: string;     // Full pasted JD text
   skills: Skill[];     // Tagged skill list
+  experienceRequirement?: ExperienceRequirement; // Optional hard-rejection filter
   createdAt: string;   // ISO 8601
   updatedAt: string;   // ISO 8601
 }
